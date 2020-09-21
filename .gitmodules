@@ -1,0 +1,3 @@
+[submodule "ROBUS/lib/LibRobus"]
+	path = ROBUS/lib/LibRobus
+	url = https://github.com/UdeS-GRO/LibRobus
