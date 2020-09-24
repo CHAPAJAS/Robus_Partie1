@@ -13,11 +13,12 @@ void avancer(int longueurCM);
 
 void setup() {
   BoardInit();
+  //Print de la valeur des encodeurs au temps 0
   print("Encodeur 0: %ld\n",ENCODER_Read(0));
   print("Encodeur 1: %ld\n",ENCODER_Read(1));
-
+  //Activation du bumper avant
   pinMode(26, INPUT);
-
+  //Roues commencent à avancer
   MOTOR_SetSpeed(0, 0.1);
   MOTOR_SetSpeed(1, 0.1);
 }
@@ -42,9 +43,10 @@ void avancer(int longueurCM)
 {
   while(true)
   {
+
     int valeurEncodeur = ENCODER_Read(0);
     print("Valeur encodeur : %ld\n", valeurEncodeur);
-
+    //si la valeur lue par l'encodeur >= à distance à parcourir en valeur des encodeurs
     if(valeurEncodeur >= (ENCODEUR_GAUCHE/(PI * DIAMETRE_ROUE))* longueurCM)
     {
       MOTOR_SetSpeed(0, 0);
