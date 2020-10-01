@@ -8,6 +8,47 @@
 #define DIAMETRE_ROUE     7.62
 
 #define PI              3.1415926535
+
+
+
+
+
+typedef struct    // Une structure est plusieurs donn/es mis dans un paquet qui contient toutes ces donnees
+                  // Un peu comme une classe sans fonction
+{
+
+  float angle;
+  float longueur;
+
+} Vecteur;
+
+
+
+/*
+Vecteur v1, v2, v3, v4, v5 ;    //creer 5 nouveaux vecteurs 
+*/
+
+
+
+// Ici les vecteur sont de la forme (angle, longueur)
+Vecteur tab[5] = { {0,5}, {45,12}, {180,0}, {0,12}, {-45,5} };    //creer 5 nouveaux vecteurs mais dans un tableau
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void avancer(int longueurCM);
 
 
