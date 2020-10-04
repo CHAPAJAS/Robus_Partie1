@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "LibCHAPAJAS.h"
 
+
+
 #define ROBUS 'A'
 
 #if (ROBUS == 'A')
@@ -11,12 +13,37 @@
 #define ENCODEUR_DROIT_360  (long)7840
 #endif
 
+
 #define DIAMETRE_ROUE      (3 * 2.54)
 #define DIAMETRE_TOUR      18.5
+
+
+
+typedef struct    // Une structure est plusieurs donnees mis dans un paquet qui contient toutes ces donnees
+                  // Un peu comme une classe sans fonction
+{
+
+  double angle;
+  double longueur;
+
+} Vecteur;
+
+
+
+// Ici les vecteur sont de la forme (angle, longueur)
+Vecteur tab[] = { {0,50}, {45,120}, {180,0} };    //creer 5 nouveaux vecteurs mais dans un tableau
+
+
+
+
+
+void avancer(int longueurCM);
+
 
 void Virage_Gauche(int angle);
 void Virage_Droit(int angle);
 void Virage(int angle);
+
 
 void setup()
 {
@@ -52,6 +79,37 @@ void Virage_Droit(int angle)
 
   MOTOR_SetSpeed(0, 0);
   MOTOR_SetSpeed(1, 0);
+
+
+void tournerTest(double angle);
+void avancerTest(double longueurCm);
+
+void sequenceParcours()
+{
+  for (int i = 0; i < sizeof_array(tab); i++)
+  {
+      Vecteur a = tab[i];
+      tournerTest(a.angle);
+      avancerTest(a.longueur);
+  }
+
+  for (int i = sizeof_array(tab) - 2; i >= 0; i--)
+  {
+      Vecteur a = tab[i];
+      avancerTest(a.longueur);
+      tournerTest((-1) * a.angle);
+  }
+}
+
+
+void tournerTest(double angle)
+{
+  print("Virage à %d\n", (int)angle);
+}
+
+void avancerTest(double longueurCm)
+{
+  print("Déplacement de %d cm\n", (int)longueurCm);
 }
 
 void Virage_Gauche(int angle) 
