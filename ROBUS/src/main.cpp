@@ -107,7 +107,7 @@ void PIDG()
   //integralG=constrain(integralG+KIG*integralG,-255,255);//Verifier les vrais bornes mon ami!!!
   cmdG=propG+KIG*integralG;
   }
-  if((erreurG<0.5)&&(erreurG>-0.5))
+  if((erreurG<5)&&(erreurG>-5))
   {
     avancementFiniG =true;
   }
@@ -128,7 +128,7 @@ void PIDD()
  // integralD=constrain(integralD+KID*integralD,-255,255);//Verifier les vrais bornes mon ami!!!
   cmdD=propD+KID*integralD;
   }
-  if((erreurD<0.5)&&(erreurD>-0.5))
+  if((erreurD<5)&&(erreurD>-5))
   {
     avancementFiniD =true;
   }
@@ -137,24 +137,31 @@ void PIDD()
 
 void avancer(int longueurCMG,int longueurCMD)
 {
-  
+    bool rdyToStopG=false;
+    bool rdyToStopD =false;
     int valeurEncodeurG = ENCODER_Read(0);
     int valeurEncodeurD = ENCODER_Read(1);
     print("Valeur encodeur : %ld\n", valeurEncodeurG);
     //si la valeur lue par l'encodeur >= à distance à parcourir en valeur des encodeurs
     MOTOR_SetSpeed(0, 0.5);
     MOTOR_SetSpeed(1, 0.5);
-    if(valeurEncodeurG >= (ENCODEUR/(PI * DIAMETRE_ROUE))* longueurCMG)
+    if(valeurEncodeurG >= ((longueurCMG/DIAMETRE_ROUE*PI)*ENCODEUR))
     {
-      MOTOR_SetSpeed(0, 0);
-      
+      rdyToStopG=true;     
      
     }
-    if(valeurEncodeurD >= (ENCODEUR/(PI * DIAMETRE_ROUE))* longueurCMD)
+    if(valeurEncodeurD >= ((longueurCMD/DIAMETRE_ROUE*PI)*ENCODEUR))
     {
       
-      MOTOR_SetSpeed(1, 0);
+      rdyToStopD=true;
      
+    }
+
+    if(rdyG&&rdyD)
+    {
+      MOTOR_SetSpeed(1,0);
+      MOTOR_SetSpeed(0,0);
     }
   
 }
+
