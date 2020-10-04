@@ -1,8 +1,17 @@
 #include <Arduino.h>
 #include "LibCHAPAJAS.h"
 
+#define ROBUS 'B'
+
+#if (ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
 #define ENCODEUR_DROIT_360  (long)7667
+#elif (ROBUS == 'B')
+#define ENCODEUR_GAUCHE_360 (long)8169
+#define ENCODEUR_DROIT_360  (long)7667
+#endif
+
+
 #define DIAMETRE_ROUE      (3 * 2.54)
 #define DIAMETRE_TOUR      18.5
 
