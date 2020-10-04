@@ -3,7 +3,7 @@
 
 
 
-#define ROBUS 'A'
+#define ROBUS 'B'
 
 #if (ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
@@ -45,22 +45,26 @@ void Virage_Droit(int angle);
 void Virage(int angle);
 
 
-void setup()
+void avancer(int longueurCM)
 {
-  BoardInit();
-  delay(1500);
+    print("avancer de %d cm\n", longueurCM);
+    ENCODER_ReadReset(0);
+    ENCODER_ReadReset(1);
+
+    int valeurEncodeur = ENCODER_Read(0);
+    //si la valeur lue par l'encodeur >= à distance à parcourir en valeur des encodeurs
+    while(valeurEncodeur < (3200/(PI * DIAMETRE_ROUE)) * longueurCM)
+    {
+      int longueurRestante = longueurCM - (valeurEncodeur * PI * DIAMETRE_ROUE);
+      valeurEncodeur = ENCODER_Read(0);
+      MOTOR_SetSpeed(0, 0.5);
+      MOTOR_SetSpeed(1, 0.5);
+    }
+
+    MOTOR_SetSpeed(0, 0);
+    MOTOR_SetSpeed(1, 0);
 }
 
-void loop()
-{
-  
-  Virage(-360);
-
-  {
-    while(true){}
-  }
-
-}
 
 void Virage_Droit(int angle) 
 {
@@ -79,38 +83,8 @@ void Virage_Droit(int angle)
 
   MOTOR_SetSpeed(0, 0);
   MOTOR_SetSpeed(1, 0);
-
-
-void tournerTest(double angle);
-void avancerTest(double longueurCm);
-
-void sequenceParcours()
-{
-  for (int i = 0; i < sizeof_array(tab); i++)
-  {
-      Vecteur a = tab[i];
-      tournerTest(a.angle);
-      avancerTest(a.longueur);
-  }
-
-  for (int i = sizeof_array(tab) - 2; i >= 0; i--)
-  {
-      Vecteur a = tab[i];
-      avancerTest(a.longueur);
-      tournerTest((-1) * a.angle);
-  }
 }
 
-
-void tournerTest(double angle)
-{
-  print("Virage à %d\n", (int)angle);
-}
-
-void avancerTest(double longueurCm)
-{
-  print("Déplacement de %d cm\n", (int)longueurCm);
-}
 
 void Virage_Gauche(int angle) 
 {
@@ -133,6 +107,7 @@ void Virage_Gauche(int angle)
 
 void Virage(int angle)
 {
+  print("Virage de %d°\n", angle);
   if (angle < 0)
   {
     angle = angle * -1;
@@ -143,4 +118,39 @@ void Virage(int angle)
     Virage_Droit(angle);
   }
   
+}
+
+void sequenceParcours()
+{
+  for (int i = 0; i < sizeof_array(tab); i++)
+  {
+      print("Vecteur #%d\n", i);
+      Vecteur a = tab[i];
+      Virage(a.angle);
+      avancer(a.longueur);
+  }
+
+  for (int i = sizeof_array(tab) - 2; i >= 0; i--)
+  {
+      Vecteur a = tab[i];
+      avancer(a.longueur);
+      Virage((-1) * a.angle);
+  }
+}
+
+void setup()
+{
+  BoardInit();
+  delay(1500);
+}
+
+void loop()
+{
+  
+  sequenceParcours();
+
+  {
+    while(true){}
+  }
+
 }
