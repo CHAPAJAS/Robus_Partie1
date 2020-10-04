@@ -1,58 +1,41 @@
 #include <Arduino.h>
 #include "LibCHAPAJAS.h"
 
-#define ROBUS 'B'
+#define ROBUS 'A'
 
 #if (ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
 #define ENCODEUR_DROIT_360  (long)7667
 #elif (ROBUS == 'B')
-#define ENCODEUR_GAUCHE_360 (long)8169
-#define ENCODEUR_DROIT_360  (long)7667
+#define ENCODEUR_GAUCHE_360 (long)7700
+#define ENCODEUR_DROIT_360  (long)7840
 #endif
-
 
 #define DIAMETRE_ROUE      (3 * 2.54)
 #define DIAMETRE_TOUR      18.5
 
-
-//void avancer(int longueurCM);
-void Virage_Gauche();
-void Virage_Droit();
-//void Virage_Gauche(float valeurDesireeCM);
-//void VirageGrandRayonGauche(int distanceCMG, float rapportD);
-//float CMtoCoche(float ValeurCM);
-
-
-
+void Virage_Gauche(int angle);
+void Virage_Droit(int angle);
+void Virage(int angle);
 
 void setup()
 {
   BoardInit();
   delay(1500);
-
 }
-
-//int conteur = 0;
-
 
 void loop()
 {
-  Virage_Droit();
-  delay(2000);
-  Virage_Gauche();
-  //conteur = conteur + 1;
+  
+  Virage(-360);
 
-  //if (conteur >= 1)
   {
     while(true){}
   }
 
 }
 
-
-
-void Virage_Droit() 
+void Virage_Droit(int angle) 
 {
 
   ENCODER_ReadReset(0);
@@ -60,7 +43,7 @@ void Virage_Droit()
 
   long valeurEncodeurGauche = ENCODER_Read(0);
   
-  while(valeurEncodeurGauche <= ENCODEUR_GAUCHE_360) 
+  while(valeurEncodeurGauche <= ENCODEUR_GAUCHE_360 / (360 / angle)) 
   {
       MOTOR_SetSpeed(0, 0.3);
       MOTOR_SetSpeed(1, -0.3);
@@ -71,7 +54,7 @@ void Virage_Droit()
   MOTOR_SetSpeed(1, 0);
 }
 
-void Virage_Gauche() 
+void Virage_Gauche(int angle) 
 {
 
   ENCODER_ReadReset(0);
@@ -79,7 +62,7 @@ void Virage_Gauche()
 
   long valeurEncodeurDroit = ENCODER_Read(1);
   
-  while(valeurEncodeurDroit <= ENCODEUR_DROIT_360) 
+  while(valeurEncodeurDroit <= ENCODEUR_DROIT_360 / (360 / angle)) 
   {
       MOTOR_SetSpeed(0, -0.3);
       MOTOR_SetSpeed(1, 0.3);
@@ -90,3 +73,16 @@ void Virage_Gauche()
   MOTOR_SetSpeed(1, 0);
 }
 
+void Virage(int angle)
+{
+  if (angle < 0)
+  {
+    angle = angle * -1;
+    Virage_Gauche(angle);
+  }
+  else
+  {
+    Virage_Droit(angle);
+  }
+  
+}
