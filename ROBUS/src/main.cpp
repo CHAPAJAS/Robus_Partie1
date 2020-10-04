@@ -6,12 +6,12 @@
 
 #define PERIODE  3
 
-#define KPD      0.00002
-#define KID      0.00003
+#define KPD      0.5//0.0000169
+#define KID     0.5// 0.0000269
 //#define KDD      12
 
-#define KPG      0.00001
-#define KIG      0.00002
+#define KPG      0.00002
+#define KIG      0.00003
 //#define KDG      12
 
 #define ENCODEUR 3200
@@ -19,11 +19,13 @@
 #define AvancerTest 100
 #define DIAMETRE_ROUE     7.62
 
-#define PI              3.1415926535
+
 
 void avancer(int longueurCMG,int longueurCMD);
 void PIDG();
 void PIDD();
+float CMtoCoche(int ValeurCM);
+int CorrectionLongueur(int longueurBase);
 
 //int analogPin;
 int valeurEncodeurG = 0;
@@ -32,8 +34,8 @@ int retroactionG = 0;
 int retroactionPrecG = 0;
 int retroactionD = 0;
 int retroactionPrecD = 0;
-int consigneG = ENCODEUR;
-int consigneD = ENCODEUR;
+int consigneG;
+int consigneD ;
 unsigned long timer=0;
 float erreurG;
 float erreurD;
@@ -46,9 +48,8 @@ float integralG;
 float integralD;
 float deriveeG;
 float deriveeD;
-bool avancementFiniG=false;
-bool avancementFiniD=false;
-
+bool rdyToStopG=false;
+bool rdyToStopD =false;
 
 void setup()
 {
@@ -63,8 +64,12 @@ void setup()
   print("Encodeur 1: %ld\n",ENCODER_Read(1));
   //Activation du bumper avant
   pinMode(26, INPUT);
-  cmdG =AvancerTest;
-  cmdD =AvancerTest;
+
+  cmdG =CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
+  cmdD =CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
+  consigneD = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
+  consigneG = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
+  
   //Timer1.initialize(500);
 }
 
@@ -72,7 +77,7 @@ void loop()
 {
 
   
-  while((!avancementFiniG)&&(!avancementFiniD))
+  while(!rdyToStopG||!rdyToStopD)
   {
     valeurEncodeurG = ENCODER_Read(0);
     valeurEncodeurD = ENCODER_Read(1);
@@ -81,8 +86,6 @@ void loop()
     PIDD();
 
   }
-  avancementFiniG=false;
-  avancementFiniD=false;
 
 
   while(1)
@@ -100,7 +103,7 @@ void PIDG()
   
   
   timer= millis();
-  erreurG=consigneG-retroactionG;
+  erreurG=cmdG-retroactionG;
 
   //deriveeG=(retroactionG-retroactionPrecG)*KDG;
   integralG +=erreurG *KIG;
@@ -109,7 +112,7 @@ void PIDG()
   }
   if((erreurG<5)&&(erreurG>-5))
   {
-    avancementFiniG =true;
+    rdyToStopG=true;
   }
 
 }
@@ -121,7 +124,7 @@ void PIDD()
     retroactionD = valeurEncodeurD;
     propD = (consigneD-retroactionD)*KPD;
     timer=millis();
-    erreurD=consigneD-retroactionD;
+    erreurD=cmdD-retroactionD;
 
   //deriveeD=(retroactionD-retroactionPrecD)*KDD;
   integralD +=erreurD *KID;
@@ -130,38 +133,45 @@ void PIDD()
   }
   if((erreurD<5)&&(erreurD>-5))
   {
-    avancementFiniD =true;
+    rdyToStopG=true;
   }
 
 }
 
-void avancer(int longueurCMG,int longueurCMD)
+void avancer(int longueurCocheG,int longueurCocheD)
 {
-    bool rdyToStopG=false;
-    bool rdyToStopD =false;
-    int valeurEncodeurG = ENCODER_Read(0);
-    int valeurEncodeurD = ENCODER_Read(1);
+    
+    valeurEncodeurG = ENCODER_Read(0);
+    valeurEncodeurD = ENCODER_Read(1);
     print("Valeur encodeur : %ld\n", valeurEncodeurG);
     //si la valeur lue par l'encodeur >= à distance à parcourir en valeur des encodeurs
     MOTOR_SetSpeed(0, 0.5);
     MOTOR_SetSpeed(1, 0.5);
-    if(valeurEncodeurG >= ((longueurCMG/DIAMETRE_ROUE*PI)*ENCODEUR))
+    if(valeurEncodeurG >= longueurCocheG)
     {
-      rdyToStopG=true;     
-     
+      rdyToStopG=true; 
     }
-    if(valeurEncodeurD >= ((longueurCMD/DIAMETRE_ROUE*PI)*ENCODEUR))
+    if(valeurEncodeurD >= longueurCocheD)
     {
-      
       rdyToStopD=true;
-     
     }
 
-    if(rdyG&&rdyD)
+    if(rdyToStopG&&rdyToStopD)
     {
       MOTOR_SetSpeed(1,0);
       MOTOR_SetSpeed(0,0);
+      rdyToStopG=false;
+      rdyToStopD =false;
     }
   
 }
-
+float CMtoCoche(int ValeurCM)
+{
+  float ValeurCoche=(ValeurCM/(DIAMETRE_ROUE*PI))*3200;
+  print("valCoche: %f", ValeurCoche);
+  return(ValeurCoche);
+}
+int CorrectionLongueur(int longueurBase)
+{
+  return(longueurBase*1.03);
+}
