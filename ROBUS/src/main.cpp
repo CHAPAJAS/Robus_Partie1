@@ -1,8 +1,12 @@
+/******************************************************************************/
+/* Inclusions --------------------------------------------------------------- */
 #include <Arduino.h>
 #include "LibCHAPAJAS.h"
 
 
 
+/******************************************************************************/
+/* Constantes --------------------------------------------------------------- */
 #define ROBUS 'B'
 
 #if (ROBUS == 'A')
@@ -19,41 +23,49 @@
 
 
 
-typedef struct    // Une structure est plusieurs donnees mis dans un paquet qui contient toutes ces donnees
-                  // Un peu comme une classe sans fonction
+/******************************************************************************/
+/* Structures --------------------------------------------------------------- */
+typedef struct    // Une structure est plusieurs données mises dans un paquet,
+                  // qui contient toutes ces données.
+                  // Un peu comme une classe sans fonctions.
 {
-
-  double angle;
+  int angle;
   double longueur;
-
 } Vecteur;
 
 
 
-// Ici les vecteur sont de la forme (angle, longueur)
-Vecteur tab[] = { {0,50}, {45,120}, {180,0} };    //creer 5 nouveaux vecteurs mais dans un tableau
+/******************************************************************************/
+/* Parcours ----------------------------------------------------------------- */
+// Ici, les vecteur sont de la forme (angle, longueur).
+// On crée des nouveaux vecteurs, mais dans un tableau.
+Vecteur tab[] = { {0,50}, {45,120}, {180,0} };
 
 
 
-
-
-void avancer(int longueurCM);
-
+/******************************************************************************/
+/* Déclarations de fonctions ------------------------------------------------ */
+void avancerTest(int longueurCM);
+void Sequence_Parcours();
 
 void Virage_Gauche(int angle);
 void Virage_Droit(int angle);
 void Virage(int angle);
 
 
-void avancer(int longueurCM)
+
+/******************************************************************************/
+/* Définitions de fonctions ------------------------------------------------- */
+void avancerTest(int longueurCM)
 {
     print("avancer de %d cm\n", longueurCM);
     ENCODER_ReadReset(0);
     ENCODER_ReadReset(1);
 
     int valeurEncodeur = ENCODER_Read(0);
-    //si la valeur lue par l'encodeur >= à distance à parcourir en valeur des encodeurs
-    while(valeurEncodeur < (3200/(PI * DIAMETRE_ROUE)) * longueurCM)
+    // Si la valeur lue par l'encodeur >= à distance à parcourir
+    // (en valeur des encodeurs).
+    while(valeurEncodeur < (3200 / (PI * DIAMETRE_ROUE)) * longueurCM)
     {
       int longueurRestante = longueurCM - (valeurEncodeur * PI * DIAMETRE_ROUE);
       valeurEncodeur = ENCODER_Read(0);
@@ -65,8 +77,7 @@ void avancer(int longueurCM)
     MOTOR_SetSpeed(1, 0);
 }
 
-
-void Virage_Droit(int angle) 
+void Virage_Droit(int angle)
 {
 
   ENCODER_ReadReset(0);
@@ -120,24 +131,47 @@ void Virage(int angle)
   
 }
 
-void sequenceParcours()
+
+/* 
+ * @brief   Suit un parcours à l'endroit et à l'envers
+ * 
+ * Suit chaque vecteur du tableau, en commençant par effectuer une rotation sur
+ * lui-même, puis en se déplaçant d'une certaine distance.
+ * Une fois tous les vecteurs suivis, il repart à partir de l'avant-dernier 
+ * vecteur et refait son parcours à l'envers, en commençant par faire la 
+ * la distance du vecteur, puis en faisant l'inverse de son angle.
+ * 
+ * @note    Lit le parcours stocké dans le tableau de vecteur `tab`.
+ */
+void Sequence_Parcours()
 {
   for (int i = 0; i < sizeof_array(tab); i++)
   {
-      print("Vecteur #%d\n", i);
-      Vecteur a = tab[i];
+      print("\nVecteur #%d\n", i);
+
+      Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
       Virage(a.angle);
-      avancer(a.longueur);
+      avancerTest(a.longueur);
   }
 
+  // Parcours à l'envers
+  print("Parcours fini! À l'envers maintenant!\n")
+  // (démarre à l'avant-dernier élément, donc taille totale - 2)
+  // (pour démarrer au dernier élément, il aurait fallu faire taille totale - 1, 
+  //  car les tableaux commencent à 0 en C).
   for (int i = sizeof_array(tab) - 2; i >= 0; i--)
   {
       Vecteur a = tab[i];
-      avancer(a.longueur);
-      Virage((-1) * a.angle);
+      avancerTest(a.longueur);
+      Virage((-1) * a.angle);    // Tourne de l'angle * -1, pour faire l'angle
+                                 // inverse.
   }
 }
 
+
+
+/******************************************************************************/
+/* main --------------------------------------------------------------------- */
 void setup()
 {
   BoardInit();
@@ -146,11 +180,8 @@ void setup()
 
 void loop()
 {
-  
-  sequenceParcours();
+  Sequence_Parcours();
 
-  {
-    while(true){}
-  }
-
+  // Fin du programme
+  while(true){}
 }
