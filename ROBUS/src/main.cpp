@@ -262,20 +262,9 @@ void PIDD()
 
 void mouvementLigne(int distanceCM)
 {
-  cmdG =CMtoCoche(CorrectionLongueur(distanceCM) ) ;
-  cmdD =CMtoCoche(CorrectionLongueur(distanceCM) ) ;
+  
 
-  consigneD = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
-  consigneG = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
-
-  while(!rdyToStopG||!rdyToStopD)
-  {
-    valeurEncodeurG = ENCODER_Read(0);
-    valeurEncodeurD = ENCODER_Read(1);
-    avancer(cmdG,cmdD);
-    PIDG();
-    PIDD();
-  }
+  
 }
 
 
@@ -283,7 +272,7 @@ void avancer(int longueurCocheG,int longueurCocheD)
 {
     valeurEncodeurG = ENCODER_Read(0);
     valeurEncodeurD = ENCODER_Read(1);
-    //print("Valeur encodeur : %ld\n", valeurEncodeurG);
+    print("Valeur encodeur : %ld\n", valeurEncodeurG);
     //si la valeur lue par l'encodeur >= à distance à parcourir en valeur des encodeurs
     MOTOR_SetSpeed(0, 0.5);
     MOTOR_SetSpeed(1, 0.5);
@@ -334,13 +323,33 @@ void setup()
   print("Encodeur 0: %ld\n",ENCODER_Read(0));
   print("Encodeur 1: %ld\n",ENCODER_Read(1));
   
+  int AvancerTest = 50;
+  cmdG = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
+  cmdD = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
+
+  consigneG = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
+  consigneD = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
+
   delay(1500);
+  
+  ENCODER_ReadReset(0);
+  ENCODER_ReadReset(1);
 }
 
 void loop()
 {
   //Sequence_Parcours();
-  mouvementLigne(50);
+
+  while(!rdyToStopG || !rdyToStopD)
+  {
+    valeurEncodeurG = ENCODER_Read(0);
+    valeurEncodeurD = ENCODER_Read(1);
+    avancer(cmdG,cmdD);
+    PIDG();
+    PIDD();
+  }
+
+  print("\nFin du programme!\n");
   // Fin du programme
   while(true){}
 }
