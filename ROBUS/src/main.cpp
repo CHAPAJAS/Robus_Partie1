@@ -98,6 +98,10 @@ float deriveeD;
 bool rdyToStopG=false;
 bool rdyToStopD =false;
 
+int compteEncodeurSimilaire = 0;
+int derniereValeurEncodeurG = 0;
+int derniereValeurEncodeurD = 0;
+
 
 
 /******************************************************************************/
@@ -225,19 +229,19 @@ void PIDG()
   
   
   timer= millis();
-  erreurG=cmdG-retroactionG;
+  erreurG = cmdG - retroactionG;
 
   //deriveeG=(retroactionG-retroactionPrecG)*KDG;
-  integralG +=erreurG *KIG;
+  integralG += erreurG *KIG;
   //integralG=constrain(integralG+KIG*integralG,-255,255);//Verifier les vrais bornes mon ami!!!
   cmdG=propG+KIG*integralG;
   }
-  if((erreurG<5)&&(erreurG>-5))
+  if((erreurG < 5) && (erreurG > -5))
   {
     rdyToStopG=true;
   }
-
 }
+
 void PIDD()
 {
   if (millis()-timer >=PERIODE)
@@ -253,7 +257,8 @@ void PIDD()
  // integralD=constrain(integralD+KID*integralD,-255,255);//Verifier les vrais bornes mon ami!!!
   cmdD=propD+KID*integralD;
   }
-  if((erreurD<5)&&(erreurD>-5))
+
+  if((erreurD < 5) && (erreurD > -5))
   {
     rdyToStopG=true;
   }
@@ -347,6 +352,23 @@ void loop()
     avancer(cmdG,cmdD);
     PIDG();
     PIDD();
+
+    // Code de test pour ne pas rester pris avec des retroactions infiniment petites.
+    if (valeurEncodeurD == derniereValeurEncodeurD && valeurEncodeurG == derniereValeurEncodeurG)
+    {
+      compteEncodeurSimilaire++;
+      if (compteEncodeurSimilaire >= 10)
+      {
+        break;
+      }
+    }
+    else
+    {
+      compteEncodeurSimilaire = 0;
+    }
+    // Mise a jour de la derniere valeur lue de l'encodeur
+    derniereValeurEncodeurD = valeurEncodeurD;
+    derniereValeurEncodeurG = valeurEncodeurG;
   }
 
   print("\nFin du programme!\n");
