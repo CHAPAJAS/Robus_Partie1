@@ -196,7 +196,7 @@ void Sequence_Parcours()
 
       Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
       Virage(a.angle);
-      avancerTest(a.longueur);
+      mouvementLigne(a.longueur);
   }
 
   // Parcours à l'envers
@@ -207,7 +207,7 @@ void Sequence_Parcours()
   for (int i = sizeof_array(tab) - 2; i >= 0; i--)
   {
       Vecteur a = tab[i];
-      avancerTest(a.longueur);
+      mouvementLigne(a.longueur);
       Virage((-1) * a.angle);    // Tourne de l'angle * -1, pour faire l'angle
                                  // inverse.
   }
@@ -259,6 +259,22 @@ void PIDD()
 
 }
 
+void mouvementLigne(int distanceCM)
+{
+  cmdG =CMtoCoche(CorrectionLongueur(distanceCM) ) ;
+  cmdD =CMtoCoche(CorrectionLongueur(distanceCM) ) ;
+  
+  while(!rdyToStopG||!rdyToStopD)
+  {
+    valeurEncodeurG = ENCODER_Read(0);
+    valeurEncodeurD = ENCODER_Read(1);
+    avancer(cmdG,cmdD);
+    PIDG();
+    PIDD();
+  }
+}
+
+
 void avancer(int longueurCocheG,int longueurCocheD)
 {
     
@@ -305,18 +321,18 @@ int CorrectionLongueur(int longueurBase)
 void setup()
 {
   BoardInit();
+  
   ENCODER_ReadReset(0);
   ENCODER_ReadReset(1);
+  
   valeurEncodeurD = ENCODER_Read(1);
   valeurEncodeurG = ENCODER_Read(0);
   //Print de la valeur des encodeurs au temps 0
   print("Encodeur 0: %ld\n",ENCODER_Read(0));
   print("Encodeur 1: %ld\n",ENCODER_Read(1));
-  //Activation du bumper avant
-  pinMode(26, INPUT);
 
-  cmdG =CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
-  cmdD =CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
+
+  
   consigneD = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
   consigneG = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
   
@@ -326,16 +342,6 @@ void setup()
 void loop()
 {
   Sequence_Parcours();
-
-  while(!rdyToStopG||!rdyToStopD)
-  {
-    valeurEncodeurG = ENCODER_Read(0);
-    valeurEncodeurD = ENCODER_Read(1);
-    avancer(cmdG,cmdD);
-    PIDG();
-    PIDD();
-
-  }
   
   // Fin du programme
   while(true){}
