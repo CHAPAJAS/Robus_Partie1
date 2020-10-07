@@ -32,8 +32,6 @@
 //#define KDG      12
 
 
-#define AvancerTest 100
-
 
 /******************************************************************************/
 /* Structures --------------------------------------------------------------- */
@@ -70,11 +68,13 @@ void PIDG();
 void PIDD();
 float CMtoCoche(int ValeurCM);
 int CorrectionLongueur(int longueurBase);
+void mouvementLigne(int distanceCM);
 
 
 
 
-
+/******************************************************************************/
+/* Variables globales ------------------------------------------------------- */
 int valeurEncodeurG = 0;
 int valeurEncodeurD = 0;
 int retroactionG = 0;
@@ -97,6 +97,7 @@ float deriveeG;
 float deriveeD;
 bool rdyToStopG=false;
 bool rdyToStopD =false;
+
 
 
 /******************************************************************************/
@@ -200,7 +201,7 @@ void Sequence_Parcours()
   }
 
   // Parcours à l'envers
-  print("Parcours fini! À l'envers maintenant!\n")
+  print("Parcours fini! À l'envers maintenant!\n");
   // (démarre à l'avant-dernier élément, donc taille totale - 2)
   // (pour démarrer au dernier élément, il aurait fallu faire taille totale - 1, 
   //  car les tableaux commencent à 0 en C).
@@ -263,7 +264,10 @@ void mouvementLigne(int distanceCM)
 {
   cmdG =CMtoCoche(CorrectionLongueur(distanceCM) ) ;
   cmdD =CMtoCoche(CorrectionLongueur(distanceCM) ) ;
-  
+
+  consigneD = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
+  consigneG = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
+
   while(!rdyToStopG||!rdyToStopD)
   {
     valeurEncodeurG = ENCODER_Read(0);
@@ -277,10 +281,9 @@ void mouvementLigne(int distanceCM)
 
 void avancer(int longueurCocheG,int longueurCocheD)
 {
-    
     valeurEncodeurG = ENCODER_Read(0);
     valeurEncodeurD = ENCODER_Read(1);
-    print("Valeur encodeur : %ld\n", valeurEncodeurG);
+    //print("Valeur encodeur : %ld\n", valeurEncodeurG);
     //si la valeur lue par l'encodeur >= à distance à parcourir en valeur des encodeurs
     MOTOR_SetSpeed(0, 0.5);
     MOTOR_SetSpeed(1, 0.5);
@@ -330,19 +333,14 @@ void setup()
   //Print de la valeur des encodeurs au temps 0
   print("Encodeur 0: %ld\n",ENCODER_Read(0));
   print("Encodeur 1: %ld\n",ENCODER_Read(1));
-
-
-  
-  consigneD = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
-  consigneG = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
   
   delay(1500);
 }
 
 void loop()
 {
-  Sequence_Parcours();
-  
+  //Sequence_Parcours();
+  mouvementLigne(50);
   // Fin du programme
   while(true){}
 }
