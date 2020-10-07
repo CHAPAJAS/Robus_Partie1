@@ -40,7 +40,7 @@ typedef struct    // Une structure est plusieurs données mises dans un paquet,
                   // Un peu comme une classe sans fonctions.
 {
   int angle;
-  double longueur;
+  int longueur;
 } Vecteur;
 
 
@@ -97,10 +97,6 @@ float deriveeG;
 float deriveeD;
 bool rdyToStopG=false;
 bool rdyToStopD =false;
-
-int compteEncodeurSimilaire = 0;
-int derniereValeurEncodeurG = 0;
-int derniereValeurEncodeurD = 0;
 
 
 
@@ -267,9 +263,44 @@ void PIDD()
 
 void mouvementLigne(int distanceCM)
 {
-  
+  int compteEncodeurSimilaire = 0;
+  int derniereValeurEncodeurG = 0;
+  int derniereValeurEncodeurD = 0;
 
-  
+  cmdG = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
+  cmdD = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
+
+  consigneG = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
+  consigneD = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
+
+  ENCODER_ReadReset(0);
+  ENCODER_ReadReset(1);
+
+  while(!rdyToStopG || !rdyToStopD)
+  {
+    valeurEncodeurG = ENCODER_Read(0);
+    valeurEncodeurD = ENCODER_Read(1);
+    avancer(cmdG,cmdD);
+    PIDG();
+    PIDD();
+
+    // Code de test pour ne pas rester pris avec des retroactions infiniment petites.
+    if (valeurEncodeurD == derniereValeurEncodeurD && valeurEncodeurG == derniereValeurEncodeurG)
+    {
+      compteEncodeurSimilaire++;
+      if (compteEncodeurSimilaire >= 10)
+      {
+        break;
+      }
+    }
+    else
+    {
+      compteEncodeurSimilaire = 0;
+    }
+    // Mise a jour de la derniere valeur lue de l'encodeur
+    derniereValeurEncodeurD = valeurEncodeurD;
+    derniereValeurEncodeurG = valeurEncodeurG;
+  }
 }
 
 
@@ -328,12 +359,6 @@ void setup()
   print("Encodeur 0: %ld\n",ENCODER_Read(0));
   print("Encodeur 1: %ld\n",ENCODER_Read(1));
   
-  int AvancerTest = 50;
-  cmdG = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
-  cmdD = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
-
-  consigneG = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
-  consigneD = CMtoCoche(CorrectionLongueur(AvancerTest) ) ;
 
   delay(1500);
   
@@ -343,34 +368,12 @@ void setup()
 
 void loop()
 {
-  //Sequence_Parcours();
+  Sequence_Parcours();
 
-  while(!rdyToStopG || !rdyToStopD)
-  {
-    valeurEncodeurG = ENCODER_Read(0);
-    valeurEncodeurD = ENCODER_Read(1);
-    avancer(cmdG,cmdD);
-    PIDG();
-    PIDD();
+  //mouvementLigne(50);
 
-    // Code de test pour ne pas rester pris avec des retroactions infiniment petites.
-    if (valeurEncodeurD == derniereValeurEncodeurD && valeurEncodeurG == derniereValeurEncodeurG)
-    {
-      compteEncodeurSimilaire++;
-      if (compteEncodeurSimilaire >= 10)
-      {
-        break;
-      }
-    }
-    else
-    {
-      compteEncodeurSimilaire = 0;
-    }
-    // Mise a jour de la derniere valeur lue de l'encodeur
-    derniereValeurEncodeurD = valeurEncodeurD;
-    derniereValeurEncodeurG = valeurEncodeurG;
-  }
-
+  MOTOR_SetSpeed(0, 0.0);
+  MOTOR_SetSpeed(1, 0.0);
   print("\nFin du programme!\n");
   // Fin du programme
   while(true){}
