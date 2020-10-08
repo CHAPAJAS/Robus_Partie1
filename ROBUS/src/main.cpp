@@ -15,6 +15,11 @@
 #elif (ROBUS == 'B')
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
+#define MUTLIVIRAGEG             0.981
+#define MULTIVIRAGEDA             1.085 // rayon exterieur
+#define MULTIVIRAGEDB             1.00004//rayon interieur
+#define MULTILONGUEUR             1.08
+
 #endif
 
 
@@ -63,7 +68,7 @@ void Virage_Droit(int angle);
 void Virage(int angle);
 
 
-void avancer(int longueurCMG,int longueurCMD);
+void avancer(int longueurCocheG,int longueurCocheD,float vitesseG,float vitesseD);
 void PIDG();
 void PIDD();
 float CMtoCoche(int ValeurCM);
@@ -162,6 +167,59 @@ void Virage_Gauche(int angle)
   MOTOR_SetSpeed(1, 0);
 }
 
+void VirageGrandRayonGauche(int distanceCMG, float rapportD)
+{
+  
+  float dCocheG =CMtoCoche(distanceCMG);
+  float dCocheD = CMtoCoche(distanceCMG*rapportD);
+
+  ENCODER_ReadReset(0);
+  ENCODER_ReadReset(1);
+
+  int valeurEncodeurGauche = ENCODER_Read(0);
+  int valeurEncodeurDroit = ENCODER_Read(1);
+  MOTOR_SetSpeed(0, 0.5);
+  MOTOR_SetSpeed(1, 0.5*rapportD);
+while(valeurEncodeurGauche<dCocheG) 
+{
+    valeurEncodeurGauche = ENCODER_Read(0);
+    valeurEncodeurDroit = ENCODER_Read(1);
+    avancer(dCocheG,dCocheD,0.5,(0.5*rapportD*MUTLIVIRAGEG));
+    PIDG();
+    PIDD();
+
+}
+MOTOR_SetSpeed(0, 0);
+MOTOR_SetSpeed(1, 0);
+
+}
+void VirageGrandRayonDroite(int distanceCMD, float rapportG)
+{
+  
+  float dCocheG =CMtoCoche(distanceCMD*rapportG*MULTILONGUEUR);
+  float dCocheD = CMtoCoche(distanceCMD*MULTILONGUEUR);
+
+  ENCODER_ReadReset(0);
+  ENCODER_ReadReset(1);
+
+  int valeurEncodeurGauche = ENCODER_Read(0);
+  int valeurEncodeurDroit = ENCODER_Read(1);
+  MOTOR_SetSpeed(0, 0.5*rapportG);
+  MOTOR_SetSpeed(1, 0.5);
+while(valeurEncodeurDroit<dCocheD) 
+{
+    valeurEncodeurGauche = ENCODER_Read(0);
+    valeurEncodeurDroit = ENCODER_Read(1);
+    avancer(dCocheG,dCocheD,(0.5*rapportG*MULTIVIRAGEDA),0.5*MULTIVIRAGEDB);
+    PIDG();
+    PIDD();
+
+}
+MOTOR_SetSpeed(0, 0);
+MOTOR_SetSpeed(1, 0);
+
+}
+
 void Virage(int angle)
 {
   print("Virage de %d°\n", angle);
@@ -191,7 +249,9 @@ void Virage(int angle)
  */
 void Sequence_Parcours()
 {
-  for (int i = 0; i < sizeof_array(tab); i++)
+  print("vgr");
+  VirageGrandRayonDroite(78.54,0.62);
+  /*for (int i = 0; i < sizeof_array(tab); i++)
   {
       print("\nVecteur #%d\n", i);
 
@@ -211,7 +271,7 @@ void Sequence_Parcours()
       mouvementLigne(a.longueur);
       Virage((-1) * a.angle);    // Tourne de l'angle * -1, pour faire l'angle
                                  // inverse.
-  }
+  }*/
 }
 
 void PIDG()
@@ -256,7 +316,7 @@ void PIDD()
 
   if((erreurD < 5) && (erreurD > -5))
   {
-    rdyToStopG=true;
+    rdyToStopD=true;
   }
 
 }
@@ -280,7 +340,7 @@ void mouvementLigne(int distanceCM)
   {
     valeurEncodeurG = ENCODER_Read(0);
     valeurEncodeurD = ENCODER_Read(1);
-    avancer(cmdG,cmdD);
+    avancer(cmdG,cmdD,0.5,0.5);
     PIDG();
     PIDD();
 
@@ -304,14 +364,14 @@ void mouvementLigne(int distanceCM)
 }
 
 
-void avancer(int longueurCocheG,int longueurCocheD)
+void avancer(int longueurCocheG,int longueurCocheD,float vitesseG,float vitesseD)
 {
     valeurEncodeurG = ENCODER_Read(0);
     valeurEncodeurD = ENCODER_Read(1);
     print("Valeur encodeur : %ld\n", valeurEncodeurG);
     //si la valeur lue par l'encodeur >= à distance à parcourir en valeur des encodeurs
-    MOTOR_SetSpeed(0, 0.5);
-    MOTOR_SetSpeed(1, 0.5);
+    MOTOR_SetSpeed(0, vitesseG);
+    MOTOR_SetSpeed(1, vitesseD);
     if(valeurEncodeurG >= longueurCocheG)
     {
       rdyToStopG=true; 
