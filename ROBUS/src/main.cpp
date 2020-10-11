@@ -7,7 +7,7 @@
 
 /******************************************************************************/
 /* Constantes --------------------------------------------------------------- */
-#define ROBUS 'B'
+#define ROBUS 'A'
 
 #if (ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
@@ -125,7 +125,6 @@ void avancerTest(int longueurCM)
 
 void Virage_Droit(int angle)
 {
-
   ENCODER_ReadReset(0);
   ENCODER_ReadReset(1);
 
@@ -209,8 +208,10 @@ void Sequence_Parcours()
   {
       Vecteur a = tab[i];
       mouvementLigne(a.longueur);
+      delay(500);
       Virage((-1) * a.angle);    // Tourne de l'angle * -1, pour faire l'angle
                                  // inverse.
+      delay(500);
   }
 }
 
