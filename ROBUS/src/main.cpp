@@ -23,8 +23,8 @@
 
 #define PERIODE  3
 
-#define KPD      0.0000169
-#define KID      0.0000269
+#define KPD      0.00002 //0.0000169
+#define KID      0.00003 //0.0000269
 //#define KDD      12
 
 #define KPG      0.00002
@@ -48,7 +48,7 @@ typedef struct    // Une structure est plusieurs données mises dans un paquet,
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-Vecteur tab[] = { {0, 80} };
+Vecteur tab[] = { {0, 1000} };
 
 
 
@@ -61,13 +61,14 @@ void Virage_Gauche(int angle);
 void Virage_Droit(int angle);
 void Virage(int angle);
 
-void avancer(int longueurCMG, int longueurCMD, int valeurEncodeurG, int valeurEncodeurD);
+void avancer(int32_t longueurCMG, int32_t longueurCMD,
+             int32_t valeurEncodeurG, int32_t valeurEncodeurD);
 
 void PIDG(int valeurEncodeur);
 void PIDD(int valeurEncodeur);
 
-float CMtoCoche(int ValeurCM);
-int CorrectionLongueur(int longueurBase);
+float CMtoCoche(int32_t valeurCM);
+int32_t CorrectionLongueur(int32_t longueurBase);
 
 void mouvementLigne(int distanceCM);
 
@@ -80,8 +81,8 @@ int retroactionPrecG = 0;
 int retroactionD = 0;
 int retroactionPrecD = 0;
 
-int consigneG;
-int consigneD;
+int32_t consigneG;
+int32_t consigneD;
 
 float cmdG;
 float cmdD;
@@ -171,7 +172,7 @@ void Virage(int angle)
 }
 
 
-void PIDG(int valeurEncodeur)
+void PIDG(int32_t valeurEncodeur)
 {
   retroactionPrecG = retroactionG;
   retroactionG = valeurEncodeur;
@@ -191,7 +192,7 @@ void PIDG(int valeurEncodeur)
   }
 }
 
-void PIDD(int valeurEncodeur)
+void PIDD(int32_t valeurEncodeur)
 {
   retroactionPrecD = retroactionD;
   retroactionD = valeurEncodeur;
@@ -213,11 +214,16 @@ void PIDD(int valeurEncodeur)
 
 void mouvementLigne(int distanceCM)
 {
+  if (distanceCM == 0)
+  {
+    return;
+  }
+
   unsigned long timer = millis();
 
   int compteEncodeurSimilaire = 0;
-  int derniereValeurEncodeurG = 0;
-  int derniereValeurEncodeurD = 0;
+  int32_t derniereValeurEncodeurG = 0;
+  int32_t derniereValeurEncodeurD = 0;
 
   consigneG = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
   consigneD = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
@@ -225,7 +231,7 @@ void mouvementLigne(int distanceCM)
   cmdG = consigneG;
   cmdD = consigneD;
 
-  print("Déplacement de %d cm (%d : %d)\n", distanceCM, consigneG, consigneD);
+  print("Déplacement de %d cm (%ld : %ld)\n", distanceCM, consigneG, consigneD);
 
   ENCODER_Reset(0);
   ENCODER_Reset(1);
@@ -234,9 +240,9 @@ void mouvementLigne(int distanceCM)
      || rdyToStopD == false)
   {
     // Lecture des encodeurs
-    int valeurEncodeurG = ENCODER_Read(0);
-    int valeurEncodeurD = ENCODER_Read(1);
-    print("Valeur encodeur : %d : %d\n", valeurEncodeurG, valeurEncodeurD);
+    int32_t valeurEncodeurG = ENCODER_Read(0);
+    int32_t valeurEncodeurD = ENCODER_Read(1);
+    print("Valeur encodeur : %ld : %ld\n", valeurEncodeurG, valeurEncodeurD);
 
     // Déplacement
     avancer(consigneG, consigneD, valeurEncodeurG, valeurEncodeurD);
@@ -244,6 +250,7 @@ void mouvementLigne(int distanceCM)
     // Vérification de si on a fini
     if (millis() - timer >= PERIODE)
     {
+
       PIDG(valeurEncodeurG);
       PIDD(valeurEncodeurD);
 
@@ -284,7 +291,7 @@ void mouvementLigne(int distanceCM)
 }
 
 
-void avancer(int longueurCocheG, int longueurCocheD, int valeurEncodeurG, int valeurEncodeurD)
+void avancer(int32_t longueurCocheG, int32_t longueurCocheD, int32_t valeurEncodeurG, int32_t valeurEncodeurD)
 {
     //si la valeur lue par l'encodeur >= à distance à parcourir en valeur des encodeurs
     MOTOR_SetSpeed(0, 0.5);
@@ -300,16 +307,16 @@ void avancer(int longueurCocheG, int longueurCocheD, int valeurEncodeurG, int va
     }
 }
 
-float CMtoCoche(int ValeurCM)
+float CMtoCoche(int32_t valeurCM)
 {
-  float ValeurCoche = (ValeurCM / (DIAMETRE_ROUE * PI)) * 3200;
+  float valeurCoche = (valeurCM / (DIAMETRE_ROUE * PI)) * 3200;
   //print("valCoche: %f", ValeurCoche);
-  return(ValeurCoche);
+  return valeurCoche;
 }
 
-int CorrectionLongueur(int longueurBase)
+int32_t CorrectionLongueur(int32_t longueurBase)
 {
-  return(longueurBase*1.03);
+  return (longueurBase * 1.03);
 }
 
 
