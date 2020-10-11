@@ -49,7 +49,7 @@ typedef struct    // Une structure est plusieurs données mises dans un paquet,
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-Vecteur tab[] = { {90,0}, {90,0}, {90,0}, {180,0}};
+Vecteur tab[] = { {0,25}, {90,25}, {90,25}, {180,0}};
 
 
 
@@ -102,7 +102,7 @@ bool rdyToStopD =false;
 
 /******************************************************************************/
 /* Définitions de fonctions ------------------------------------------------- */
-void avancerTest(int longueurCM)
+/*void avancerTest(int longueurCM)
 {
     print("avancer de %d cm\n", longueurCM);
     ENCODER_ReadReset(0);
@@ -122,6 +122,7 @@ void avancerTest(int longueurCM)
     MOTOR_SetSpeed(0, 0);
     MOTOR_SetSpeed(1, 0);
 }
+*/
 
 void Virage_Droit(int angle)
 {
@@ -132,8 +133,8 @@ void Virage_Droit(int angle)
   
   while(valeurEncodeurGauche <= ENCODEUR_GAUCHE_360 / (360 / angle)) 
   {
-      MOTOR_SetSpeed(0, 0.3);
-      MOTOR_SetSpeed(1, -0.3);
+      MOTOR_SetSpeed(0, 0.5);
+      MOTOR_SetSpeed(1, -0.5);
       valeurEncodeurGauche = ENCODER_Read(0);
   }
 
@@ -152,8 +153,8 @@ void Virage_Gauche(int angle)
   
   while(valeurEncodeurDroit <= ENCODEUR_DROIT_360 / (360 / angle)) 
   {
-      MOTOR_SetSpeed(0, -0.3);
-      MOTOR_SetSpeed(1, 0.3);
+      MOTOR_SetSpeed(0, -0.5);
+      MOTOR_SetSpeed(1, 0.5);
       valeurEncodeurDroit = ENCODER_Read(1);
   }
 
@@ -163,7 +164,7 @@ void Virage_Gauche(int angle)
 
 void Virage(int angle)
 {
-  print("Virage de %d°\n", angle);
+  //print("Virage de %d°\n", angle);
   if (angle < 0)
   {
     angle = angle * -1;
@@ -192,12 +193,14 @@ void Sequence_Parcours()
 {
   for (int i = 0; i < sizeof_array(tab); i++)
   {
-      print("\nVecteur #%d\n", i);
+      //print("\nVecteur #%d\n", i);
 
       Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
       Virage(a.angle);
-      delay(500);
+      //delay(100);
       mouvementLigne(a.longueur);
+
+
   }
 
   // Parcours à l'envers
@@ -208,8 +211,9 @@ void Sequence_Parcours()
   for (int i = sizeof_array(tab) - 2; i >= 0; i--)
   {
       Vecteur a = tab[i];
+      //delay(100);
       mouvementLigne(a.longueur);
-      delay(500);
+      //delay(500);
       Virage((-1) * a.angle);    // Tourne de l'angle * -1, pour faire l'angle
                                  // inverse.
       //delay(500);
@@ -266,11 +270,11 @@ void PIDD()
 void mouvementLigne(int distanceCM)
 {
   
-  print("Avancer de %d", distanceCM);
+  //print("Avancer de %d", distanceCM);
 
   if(distanceCM == 0)
   {
-    return 0;
+    return;
   }
   int compteEncodeurSimilaire = 0;
   int derniereValeurEncodeurG = 0;
@@ -369,7 +373,7 @@ void setup()
   print("Encodeur 1: %ld\n",ENCODER_Read(1));
   
 
-  delay(1500);
+  delay(500);
   
   ENCODER_ReadReset(0);
   ENCODER_ReadReset(1);
