@@ -23,8 +23,8 @@
 
 #define PERIODE  3
 
-#define KPD      0.5//0.0000169
-#define KID     0.5// 0.0000269
+#define KPD      0.0000169
+#define KID      0.0000269
 //#define KDD      12
 
 #define KPG      0.00002
@@ -44,12 +44,11 @@ typedef struct    // Une structure est plusieurs données mises dans un paquet,
 } Vecteur;
 
 
-
 /******************************************************************************/
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-Vecteur tab[] = { {0,50}, {45,120}, {180,0} };
+Vecteur tab[] = { {0, 80} };
 
 
 
@@ -62,41 +61,38 @@ void Virage_Gauche(int angle);
 void Virage_Droit(int angle);
 void Virage(int angle);
 
+void avancer(int longueurCMG, int longueurCMD, int valeurEncodeurG, int valeurEncodeurD);
 
-void avancer(int longueurCMG,int longueurCMD);
-void PIDG();
-void PIDD();
+void PIDG(int valeurEncodeur);
+void PIDD(int valeurEncodeur);
+
 float CMtoCoche(int ValeurCM);
 int CorrectionLongueur(int longueurBase);
-void mouvementLigne(int distanceCM);
 
+void mouvementLigne(int distanceCM);
 
 
 
 /******************************************************************************/
 /* Variables globales ------------------------------------------------------- */
-int valeurEncodeurG = 0;
-int valeurEncodeurD = 0;
 int retroactionG = 0;
 int retroactionPrecG = 0;
 int retroactionD = 0;
 int retroactionPrecD = 0;
+
 int consigneG;
-int consigneD ;
-unsigned long timer=0;
-float erreurG;
-float erreurD;
-float distance;
+int consigneD;
+
 float cmdG;
 float cmdD;
-float propG;
-float propD;
+
 float integralG;
 float integralD;
 float deriveeG;
 float deriveeD;
-bool rdyToStopG=false;
-bool rdyToStopD =false;
+
+bool rdyToStopG = false;
+bool rdyToStopD = false;
 
 
 
@@ -113,7 +109,7 @@ void avancerTest(int longueurCM)
     // (en valeur des encodeurs).
     while(valeurEncodeur < (3200 / (PI * DIAMETRE_ROUE)) * longueurCM)
     {
-      int longueurRestante = longueurCM - (valeurEncodeur * PI * DIAMETRE_ROUE);
+      //int longueurRestante = longueurCM - (valeurEncodeur * PI * DIAMETRE_ROUE);
       valeurEncodeur = ENCODER_Read(0);
       MOTOR_SetSpeed(0, 0.5);
       MOTOR_SetSpeed(1, 0.5);
@@ -144,7 +140,6 @@ void Virage_Droit(int angle)
 
 void Virage_Gauche(int angle) 
 {
-
   ENCODER_ReadReset(0);
   ENCODER_ReadReset(1);
 
@@ -173,7 +168,148 @@ void Virage(int angle)
   {
     Virage_Droit(angle);
   }
+}
+
+
+void PIDG(int valeurEncodeur)
+{
+  retroactionPrecG = retroactionG;
+  retroactionG = valeurEncodeur;
+  float prop = (consigneG - retroactionG) * KPG;
+
+  //deriveeG = (retroactionG - retroactionPrecG) * KDG;
+
+  float erreur = cmdG - retroactionG;
+  integralG += erreur * KIG;
+  //integralG = constrain(integralG + KIG * integralG, -255, 255); //Verifier les vrais bornes mon ami!!!
+
+  cmdG = prop + KIG * integralG;
+
+  if((erreur < 5) && (erreur > -5))
+  {
+    rdyToStopG = true;
+  }
+}
+
+void PIDD(int valeurEncodeur)
+{
+  retroactionPrecD = retroactionD;
+  retroactionD = valeurEncodeur;
+  float prop = (consigneD - retroactionD) * KPD;
   
+  //deriveeD = (retroactionD - retroactionPrecD) * KDD;
+
+  float erreur = cmdD - retroactionD;
+  integralD += erreur * KID;
+  // integralD = constrain(integralD + KID * integralD, -255,255);//Verifier les vrais bornes mon ami!!!
+  
+  cmdD = prop + KID * integralD;
+
+  if((erreur < 5) && (erreur > -5))
+  {
+    rdyToStopD = true;
+  }
+}
+
+void mouvementLigne(int distanceCM)
+{
+  unsigned long timer = millis();
+
+  int compteEncodeurSimilaire = 0;
+  int derniereValeurEncodeurG = 0;
+  int derniereValeurEncodeurD = 0;
+
+  consigneG = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
+  consigneD = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
+  
+  cmdG = consigneG;
+  cmdD = consigneD;
+
+  print("Déplacement de %d cm (%d : %d)\n", distanceCM, consigneG, consigneD);
+
+  ENCODER_Reset(0);
+  ENCODER_Reset(1);
+
+  while(rdyToStopG == false
+     || rdyToStopD == false)
+  {
+    // Lecture des encodeurs
+    int valeurEncodeurG = ENCODER_Read(0);
+    int valeurEncodeurD = ENCODER_Read(1);
+    print("Valeur encodeur : %d : %d\n", valeurEncodeurG, valeurEncodeurD);
+
+    // Déplacement
+    avancer(consigneG, consigneD, valeurEncodeurG, valeurEncodeurD);
+
+    // Vérification de si on a fini
+    if (millis() - timer >= PERIODE)
+    {
+      PIDG(valeurEncodeurG);
+      PIDD(valeurEncodeurD);
+
+      // Mise à jour du timer
+      timer = millis();
+    }
+
+
+    // Patch pour ne pas rester pris avec des retroactions infiniment petites.
+    if (valeurEncodeurD == derniereValeurEncodeurD
+     && valeurEncodeurG == derniereValeurEncodeurG)
+    {
+      compteEncodeurSimilaire++;
+      if (compteEncodeurSimilaire >= 10)
+      {
+        // On sort de la boucle si jamais on a des valeurs d'encodeurs pareils
+        // plus de 10 fois de suite dans les deux roues.
+        break;
+      }
+    }
+    else
+    {
+      // Réinitialise le compteur si jamais les valeurs ne sont plus similaires
+      compteEncodeurSimilaire = 0;
+    }
+    // Mise a jour de la derniere valeur lue de l'encodeur
+    derniereValeurEncodeurD = valeurEncodeurD;
+    derniereValeurEncodeurG = valeurEncodeurG;
+  }
+  
+  // On a fini d'avancer
+  rdyToStopG = false;
+  rdyToStopD = false;
+
+  // Arrêt des moteurs
+  MOTOR_SetSpeed(1,0);
+  MOTOR_SetSpeed(0,0);
+}
+
+
+void avancer(int longueurCocheG, int longueurCocheD, int valeurEncodeurG, int valeurEncodeurD)
+{
+    //si la valeur lue par l'encodeur >= à distance à parcourir en valeur des encodeurs
+    MOTOR_SetSpeed(0, 0.5);
+    MOTOR_SetSpeed(1, 0.5);
+
+    if(valeurEncodeurG >= longueurCocheG)
+    {
+      rdyToStopG = true; 
+    }
+    if(valeurEncodeurD >= longueurCocheD)
+    {
+      rdyToStopD = true;
+    }
+}
+
+float CMtoCoche(int ValeurCM)
+{
+  float ValeurCoche = (ValeurCM / (DIAMETRE_ROUE * PI)) * 3200;
+  //print("valCoche: %f", ValeurCoche);
+  return(ValeurCoche);
+}
+
+int CorrectionLongueur(int longueurBase)
+{
+  return(longueurBase*1.03);
 }
 
 
@@ -196,8 +332,14 @@ void Sequence_Parcours()
 
       Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
       Virage(a.angle);
+      delay(500);
       mouvementLigne(a.longueur);
+      delay(500);
   }
+
+
+  return;     // À ENLEVER
+
 
   // Parcours à l'envers
   print("Parcours fini! À l'envers maintenant!\n");
@@ -215,135 +357,6 @@ void Sequence_Parcours()
   }
 }
 
-void PIDG()
-{
-  if (millis()-timer >=PERIODE)
-  {
-
-    retroactionPrecG = retroactionG;
-    retroactionG = valeurEncodeurG;
-    propG = (consigneG-retroactionG)*KPG;
-  
-  
-  timer= millis();
-  erreurG = cmdG - retroactionG;
-
-  //deriveeG=(retroactionG-retroactionPrecG)*KDG;
-  integralG += erreurG *KIG;
-  //integralG=constrain(integralG+KIG*integralG,-255,255);//Verifier les vrais bornes mon ami!!!
-  cmdG=propG+KIG*integralG;
-  }
-  if((erreurG < 5) && (erreurG > -5))
-  {
-    rdyToStopG=true;
-  }
-}
-
-void PIDD()
-{
-  if (millis()-timer >=PERIODE)
-  {
-    retroactionPrecD = retroactionD;
-    retroactionD = valeurEncodeurD;
-    propD = (consigneD-retroactionD)*KPD;
-    timer=millis();
-    erreurD=cmdD-retroactionD;
-
-  //deriveeD=(retroactionD-retroactionPrecD)*KDD;
-  integralD +=erreurD *KID;
- // integralD=constrain(integralD+KID*integralD,-255,255);//Verifier les vrais bornes mon ami!!!
-  cmdD=propD+KID*integralD;
-  }
-
-  if((erreurD < 5) && (erreurD > -5))
-  {
-    rdyToStopG=true;
-  }
-
-}
-
-void mouvementLigne(int distanceCM)
-{
-  int compteEncodeurSimilaire = 0;
-  int derniereValeurEncodeurG = 0;
-  int derniereValeurEncodeurD = 0;
-
-  cmdG = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
-  cmdD = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
-
-  consigneG = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
-  consigneD = CMtoCoche(CorrectionLongueur(distanceCM) ) ;
-
-  ENCODER_ReadReset(0);
-  ENCODER_ReadReset(1);
-
-  while(!rdyToStopG || !rdyToStopD)
-  {
-    valeurEncodeurG = ENCODER_Read(0);
-    valeurEncodeurD = ENCODER_Read(1);
-    avancer(cmdG,cmdD);
-    PIDG();
-    PIDD();
-
-    // Code de test pour ne pas rester pris avec des retroactions infiniment petites.
-    if (valeurEncodeurD == derniereValeurEncodeurD && valeurEncodeurG == derniereValeurEncodeurG)
-    {
-      compteEncodeurSimilaire++;
-      if (compteEncodeurSimilaire >= 10)
-      {
-        break;
-      }
-    }
-    else
-    {
-      compteEncodeurSimilaire = 0;
-    }
-    // Mise a jour de la derniere valeur lue de l'encodeur
-    derniereValeurEncodeurD = valeurEncodeurD;
-    derniereValeurEncodeurG = valeurEncodeurG;
-  }
-}
-
-
-void avancer(int longueurCocheG,int longueurCocheD)
-{
-    valeurEncodeurG = ENCODER_Read(0);
-    valeurEncodeurD = ENCODER_Read(1);
-    print("Valeur encodeur : %ld\n", valeurEncodeurG);
-    //si la valeur lue par l'encodeur >= à distance à parcourir en valeur des encodeurs
-    MOTOR_SetSpeed(0, 0.5);
-    MOTOR_SetSpeed(1, 0.5);
-    if(valeurEncodeurG >= longueurCocheG)
-    {
-      rdyToStopG=true; 
-    }
-    if(valeurEncodeurD >= longueurCocheD)
-    {
-      rdyToStopD=true;
-    }
-
-    if(rdyToStopG&&rdyToStopD)
-    {
-      MOTOR_SetSpeed(1,0);
-      MOTOR_SetSpeed(0,0);
-      rdyToStopG=false;
-      rdyToStopD =false;
-    }
-  
-}
-
-float CMtoCoche(int ValeurCM)
-{
-  float ValeurCoche=(ValeurCM/(DIAMETRE_ROUE*PI))*3200;
-  print("valCoche: %f", ValeurCoche);
-  return(ValeurCoche);
-}
-
-int CorrectionLongueur(int longueurBase)
-{
-  return(longueurBase*1.03);
-}
-
 
 /******************************************************************************/
 /* main --------------------------------------------------------------------- */
@@ -354,28 +367,26 @@ void setup()
   ENCODER_ReadReset(0);
   ENCODER_ReadReset(1);
   
-  valeurEncodeurD = ENCODER_Read(1);
-  valeurEncodeurG = ENCODER_Read(0);
   //Print de la valeur des encodeurs au temps 0
-  print("Encodeur 0: %ld\n",ENCODER_Read(0));
-  print("Encodeur 1: %ld\n",ENCODER_Read(1));
-  
+  print("Encodeur 0: %ld\n", ENCODER_Read(0));
+  print("Encodeur 1: %ld\n", ENCODER_Read(1));
 
   delay(1500);
   
   ENCODER_ReadReset(0);
   ENCODER_ReadReset(1);
+
+  // Fait la séquence à l'endroit, puis à l'envers.
+  // Fonction principale du programme, la plus importante
+  Sequence_Parcours();
+
+  // On s'assure que le robot est bien arrêté
+  MOTOR_SetSpeed(0, 0.0);
+  MOTOR_SetSpeed(1, 0.0);
+  print("\nFin du programme!\n");
 }
 
 void loop()
 {
-  Sequence_Parcours();
-
-  //mouvementLigne(50);
-
-  MOTOR_SetSpeed(0, 0.0);
-  MOTOR_SetSpeed(1, 0.0);
-  print("\nFin du programme!\n");
-  // Fin du programme
-  while(true){}
+  // On n'a rien dans le loop
 }
