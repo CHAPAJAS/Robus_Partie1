@@ -7,7 +7,7 @@
 
 /******************************************************************************/
 /* Constantes --------------------------------------------------------------- */
-#define ROBUS 'A'
+#define ROBUS 'B'
 
 #if (ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
@@ -49,7 +49,7 @@ typedef struct    // Une structure est plusieurs données mises dans un paquet,
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-Vecteur tab[] = { {0,50}, {45,120}, {180,0} };
+Vecteur tab[] = { {90,0}, {90,0}, {90,0}, {180,0}};
 
 
 
@@ -196,6 +196,7 @@ void Sequence_Parcours()
 
       Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
       Virage(a.angle);
+      delay(500);
       mouvementLigne(a.longueur);
   }
 
@@ -211,7 +212,7 @@ void Sequence_Parcours()
       delay(500);
       Virage((-1) * a.angle);    // Tourne de l'angle * -1, pour faire l'angle
                                  // inverse.
-      delay(500);
+      //delay(500);
   }
 }
 
@@ -264,6 +265,13 @@ void PIDD()
 
 void mouvementLigne(int distanceCM)
 {
+  
+  print("Avancer de %d", distanceCM);
+
+  if(distanceCM == 0)
+  {
+    return 0;
+  }
   int compteEncodeurSimilaire = 0;
   int derniereValeurEncodeurG = 0;
   int derniereValeurEncodeurD = 0;
@@ -372,7 +380,8 @@ void loop()
   Sequence_Parcours();
 
   //mouvementLigne(50);
-
+  //Virage(0);
+  //mouvementLigne(100);
   MOTOR_SetSpeed(0, 0.0);
   MOTOR_SetSpeed(1, 0.0);
   print("\nFin du programme!\n");
