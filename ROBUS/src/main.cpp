@@ -12,7 +12,9 @@
 #if (ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
 #define ENCODEUR_DROIT_360  (long)7667
+
 #define SPD 1.0875
+
 #elif (ROBUS == 'B')
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
@@ -51,7 +53,6 @@ typedef struct    // Une structure est plusieurs données mises dans un paquet,
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
 Vecteur tab[] = { {0, 350}};
-
 
 
 /******************************************************************************/
@@ -98,7 +99,6 @@ bool rdyToStopD = false;
 /******************************************************************************/
 /* Définitions de fonctions ------------------------------------------------- */
 
-
 void Virage_Droit(int angle)
 {
   ENCODER_ReadReset(0);
@@ -108,8 +108,8 @@ void Virage_Droit(int angle)
   
   while(valeurEncodeurGauche <= ENCODEUR_GAUCHE_360 / (360 / angle)) 
   {
-      MOTOR_SetSpeed(0, 0.3);
-      MOTOR_SetSpeed(1, -0.3);
+      MOTOR_SetSpeed(0, 0.5);
+      MOTOR_SetSpeed(1, -0.5);
       valeurEncodeurGauche = ENCODER_Read(0);
   }
 
@@ -127,8 +127,8 @@ void Virage_Gauche(int angle)
   
   while(valeurEncodeurDroit <= ENCODEUR_DROIT_360 / (360 / angle)) 
   {
-      MOTOR_SetSpeed(0, -0.3);
-      MOTOR_SetSpeed(1, 0.3);
+      MOTOR_SetSpeed(0, -0.5);
+      MOTOR_SetSpeed(1, 0.5);
       valeurEncodeurDroit = ENCODER_Read(1);
   }
 
@@ -151,10 +151,9 @@ void Virage(int angle)
 }
 
 
-
 void mouvementLigne(int distanceCM)
 {
-  if (distanceCM == 0)
+  if(distanceCM == 0)
   {
     return;
   }
@@ -189,9 +188,7 @@ void mouvementLigne(int distanceCM)
     // Vérification de si on a fini
     if (millis() - timer >= PERIODE)
     {
-      // Déplacement
-
-     
+      // Déplacement     
       avancer(valeurEncodeurG,consigneG);
 
       // Mise à jour du timer
@@ -241,13 +238,13 @@ void mouvementLigne(int distanceCM)
 
 void avancer(int32_t encodeur,int32_t consigne)
 {
-  if(encodeur<(consigne*0.05)||encodeur>(consigne*0.9)){
+  if(encodeur < (consigne * 0.05) || encodeur > (consigne * 0.9)){
     MOTOR_SetSpeed(0, 0.2);
-    MOTOR_SetSpeed(1, 0.2*SPD);
+    MOTOR_SetSpeed(1, 0.2 * SPD);
   }
-  else if(encodeur<(consigne*0.15)||encodeur>(consigne*0.75)){
+  else if(encodeur < (consigne * 0.15) || encodeur > (consigne * 0.75)){
     MOTOR_SetSpeed(0, 0.5);
-    MOTOR_SetSpeed(1, 0.5*SPD);
+    MOTOR_SetSpeed(1, 0.5 * SPD);
   }
   else{
     MOTOR_SetSpeed(0, 0.9);
@@ -258,7 +255,6 @@ void avancer(int32_t encodeur,int32_t consigne)
 float CMtoCoche(int32_t valeurCM)
 {
   float valeurCoche = (valeurCM / (DIAMETRE_ROUE * PI)) * 3200;
-  //print("valCoche: %f", ValeurCoche);
   return valeurCoche;
 }
 
@@ -287,9 +283,7 @@ void Sequence_Parcours()
 
       Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
       Virage(a.angle);
-      delay(500);
       mouvementLigne(a.longueur);
-      delay(500);
   }
 
 
@@ -305,10 +299,8 @@ void Sequence_Parcours()
   {
       Vecteur a = tab[i];
       mouvementLigne(a.longueur);
-      delay(500);
       Virage((-1) * a.angle);    // Tourne de l'angle * -1, pour faire l'angle
                                  // inverse.
-      delay(500);
   }
 }
 
@@ -326,7 +318,7 @@ void setup()
   print("Encodeur 0: %ld\n", ENCODER_Read(0));
   print("Encodeur 1: %ld\n", ENCODER_Read(1));
 
-  delay(1500);
+  delay(500);
   
   ENCODER_ReadReset(0);
   ENCODER_ReadReset(1);
