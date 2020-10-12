@@ -12,9 +12,11 @@
 #if (ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
 #define ENCODEUR_DROIT_360  (long)7667
+#define SPD 1.0875
 #elif (ROBUS == 'B')
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
+#define SPD 0.986
 #endif
 
 
@@ -48,24 +50,20 @@ typedef struct    // Une structure est plusieurs données mises dans un paquet,
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-Vecteur tab[] = { {0, 100} };
+Vecteur tab[] = { {0, 200} };
 
 
 
 /******************************************************************************/
 /* Déclarations de fonctions ------------------------------------------------ */
-void avancerTest(int longueurCM);
+//void avancerTest(int longueurCM);
 void Sequence_Parcours();
 
 void Virage_Gauche(int angle);
 void Virage_Droit(int angle);
 void Virage(int angle);
 
-void avancer(int32_t longueurCMG, int32_t longueurCMD,
-             int32_t oldLongueurG, int32_t oldLongueurD);
-
-void PIDG(int valeurEncodeur);
-void PIDD(int valeurEncodeur);
+void avancer(int32_t encodeur,int32_t consigne);
 
 float CMtoCoche(int32_t valeurCM);
 int32_t CorrectionLongueur(int32_t longueurBase);
@@ -99,26 +97,7 @@ bool rdyToStopD = false;
 
 /******************************************************************************/
 /* Définitions de fonctions ------------------------------------------------- */
-void avancerTest(int longueurCM)
-{
-    print("avancer de %d cm\n", longueurCM);
-    ENCODER_ReadReset(0);
-    ENCODER_ReadReset(1);
 
-    int valeurEncodeur = ENCODER_Read(0);
-    // Si la valeur lue par l'encodeur >= à distance à parcourir
-    // (en valeur des encodeurs).
-    while(valeurEncodeur < (3200 / (PI * DIAMETRE_ROUE)) * longueurCM)
-    {
-      //int longueurRestante = longueurCM - (valeurEncodeur * PI * DIAMETRE_ROUE);
-      valeurEncodeur = ENCODER_Read(0);
-      MOTOR_SetSpeed(0, 0.5);
-      MOTOR_SetSpeed(1, 0.5);
-    }
-
-    MOTOR_SetSpeed(0, 0);
-    MOTOR_SetSpeed(1, 0);
-}
 
 void Virage_Droit(int angle)
 {
@@ -172,45 +151,6 @@ void Virage(int angle)
 }
 
 
-void PIDG(int32_t valeurEncodeur)
-{
-  retroactionPrecG = retroactionG;
-  retroactionG = valeurEncodeur;
-  float prop = (consigneG - retroactionG) * KPG;
-
-  //deriveeG = (retroactionG - retroactionPrecG) * KDG;
-
-  float erreur = cmdG - retroactionG;
-  integralG += erreur * KIG;
-  //integralG = constrain(integralG + KIG * integralG, -255, 255); //Verifier les vrais bornes mon ami!!!
-
-  cmdG = prop + KIG * integralG;
-
-  if((erreur < 5) && (erreur > -5))
-  {
-    rdyToStopG = true;
-  }
-}
-
-void PIDD(int32_t valeurEncodeur)
-{
-  retroactionPrecD = retroactionD;
-  retroactionD = valeurEncodeur;
-  float prop = (consigneD - retroactionD) * KPD;
-  
-  //deriveeD = (retroactionD - retroactionPrecD) * KDD;
-
-  float erreur = cmdD - retroactionD;
-  integralD += erreur * KID;
-  // integralD = constrain(integralD + KID * integralD, -255,255);//Verifier les vrais bornes mon ami!!!
-  
-  cmdD = prop + KID * integralD;
-
-  if((erreur < 5) && (erreur > -5))
-  {
-    rdyToStopD = true;
-  }
-}
 
 void mouvementLigne(int distanceCM)
 {
@@ -231,8 +171,6 @@ void mouvementLigne(int distanceCM)
   cmdG = consigneG;
   cmdD = consigneD;
 
-  float oldCmdG = cmdG;
-  float oldCmdD = cmdD;
 
   print("Déplacement de %d cm (%ld : %ld)\n", distanceCM, consigneG, consigneD);
 
@@ -240,7 +178,7 @@ void mouvementLigne(int distanceCM)
   ENCODER_Reset(1);
 
   while(rdyToStopG == false
-     || rdyToStopD == false)
+     || rdyToStopD == false)/*??????*/
   {
     // Lecture des encodeurs
     int32_t valeurEncodeurG = ENCODER_Read(0);
@@ -252,10 +190,9 @@ void mouvementLigne(int distanceCM)
     if (millis() - timer >= PERIODE)
     {
       // Déplacement
-      avancer(cmdG, cmdD, oldCmdG, oldCmdD);
 
-      PIDG(valeurEncodeurG);
-      PIDD(valeurEncodeurD);
+     
+      avancer(valeurEncodeurG,consigneG);
 
       // Mise à jour du timer
       timer = millis();
@@ -302,21 +239,20 @@ void mouvementLigne(int distanceCM)
 }
 
 
-void avancer(int32_t longueurCocheG, int32_t longueurCocheD,
-             int32_t oldLongueurG, int32_t oldLongueurD)
+void avancer(int32_t encodeur,int32_t consigne)
 {
-    double derivG = (longueurCocheG - oldLongueurG) / (PERIODE * 0.001);
-    double derivD = (longueurCocheD - oldLongueurD) / (PERIODE * 0.001);
-    derivG /= 100000;
-    derivD /= 100000;
-
-    print("Ratio: %d\n", derivG/derivD * 1000);
-    if (derivG < 0.0) derivG = 0; if (derivG > 100) derivG = 100;
-    if (derivD < 0.0) derivD = 0; if (derivD > 100) derivD = 100;
-
-    //si la valeur lue par l'encodeur >= à distance à parcourir en valeur des encodeurs
-    MOTOR_SetSpeed(0, 0.5 * abs(derivG / derivD));
-    MOTOR_SetSpeed(1, 0.5 * abs(derivD / derivG));
+  if(encodeur<(consigne*0.05)||encodeur>(consigne*0.9)){
+    MOTOR_SetSpeed(0, 0.2);
+    MOTOR_SetSpeed(1, 0.2*SPD);
+  }
+  else if(encodeur<(consigne*0.15)||encodeur>(consigne*0.75)){
+    MOTOR_SetSpeed(0, 0.5);
+    MOTOR_SetSpeed(1, 0.5*SPD);
+  }
+  else{
+    MOTOR_SetSpeed(0, 0.7);
+    MOTOR_SetSpeed(1, 0.7*SPD);
+  }
 }
 
 float CMtoCoche(int32_t valeurCM)
