@@ -7,7 +7,7 @@
 
 /******************************************************************************/
 /* Constantes --------------------------------------------------------------- */
-#define ROBUS 'A'
+#define ROBUS 'B'
 
 #if (ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
@@ -16,7 +16,7 @@
 #elif (ROBUS == 'B')
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
-#define SPD 0.986
+#define SPD 0.975
 #endif
 
 
@@ -50,7 +50,7 @@ typedef struct    // Une structure est plusieurs données mises dans un paquet,
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-Vecteur tab[] = { {0, 200} };
+Vecteur tab[] = { {0, 350}};
 
 
 
@@ -250,8 +250,8 @@ void avancer(int32_t encodeur,int32_t consigne)
     MOTOR_SetSpeed(1, 0.5*SPD);
   }
   else{
-    MOTOR_SetSpeed(0, 0.7);
-    MOTOR_SetSpeed(1, 0.7*SPD);
+    MOTOR_SetSpeed(0, 0.9);
+    MOTOR_SetSpeed(1, 0.9*SPD);
   }
 }
 
