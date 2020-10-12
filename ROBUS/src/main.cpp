@@ -12,13 +12,13 @@
 #if (ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
 #define ENCODEUR_DROIT_360  (long)7667
-
-#define SPD 1.0875
-
+#define SPD 1.076
+#define ANGULO 0.96
 #elif (ROBUS == 'B')
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
-#define SPD 0.975
+#define SPD 0.967
+#define ANGULO 0.975
 #endif
 
 
@@ -52,7 +52,7 @@ typedef struct    // Une structure est plusieurs données mises dans un paquet,
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-Vecteur tab[] = { {0, 350}};
+Vecteur tab[] = {{0,123},{-90,88},{90,86},{45,182},{-90,61},{45,110},{180,0}};
 
 
 /******************************************************************************/
@@ -106,10 +106,10 @@ void Virage_Droit(int angle)
 
   long valeurEncodeurGauche = ENCODER_Read(0);
   
-  while(valeurEncodeurGauche <= ENCODEUR_GAUCHE_360 / (360 / angle)) 
+  while(valeurEncodeurGauche <= ENCODEUR_GAUCHE_360 / (360 / (angle*ANGULO))) 
   {
-      MOTOR_SetSpeed(0, 0.5);
-      MOTOR_SetSpeed(1, -0.5);
+      MOTOR_SetSpeed(0, 0.3);
+      MOTOR_SetSpeed(1, -0.3);
       valeurEncodeurGauche = ENCODER_Read(0);
   }
 
@@ -125,10 +125,10 @@ void Virage_Gauche(int angle)
 
   long valeurEncodeurDroit = ENCODER_Read(1);
   
-  while(valeurEncodeurDroit <= ENCODEUR_DROIT_360 / (360 / angle)) 
+  while(valeurEncodeurDroit <= ENCODEUR_DROIT_360 / (360 / (angle*ANGULO))) 
   {
-      MOTOR_SetSpeed(0, -0.5);
-      MOTOR_SetSpeed(1, 0.5);
+      MOTOR_SetSpeed(0, -0.3);
+      MOTOR_SetSpeed(1, 0.3);
       valeurEncodeurDroit = ENCODER_Read(1);
   }
 
@@ -238,17 +238,21 @@ void mouvementLigne(int distanceCM)
 
 void avancer(int32_t encodeur,int32_t consigne)
 {
-  if(encodeur < (consigne * 0.05) || encodeur > (consigne * 0.9)){
-    MOTOR_SetSpeed(0, 0.2);
-    MOTOR_SetSpeed(1, 0.2 * SPD);
+  if(encodeur < (consigne * 0.05) || encodeur > (consigne * 0.95)){
+    MOTOR_SetSpeed(0, 0.3);
+    MOTOR_SetSpeed(1, 0.3 * SPD);
   }
-  else if(encodeur < (consigne * 0.15) || encodeur > (consigne * 0.75)){
+  else if(encodeur < (consigne * 0.2) || encodeur > (consigne * 0.8)){
     MOTOR_SetSpeed(0, 0.5);
     MOTOR_SetSpeed(1, 0.5 * SPD);
   }
+  else if(encodeur < (consigne * 0.3) || encodeur > (consigne * 0.7)){
+    MOTOR_SetSpeed(0, 0.6);
+    MOTOR_SetSpeed(1, 0.6 * SPD);
+  }
   else{
-    MOTOR_SetSpeed(0, 0.9);
-    MOTOR_SetSpeed(1, 0.9*SPD);
+    MOTOR_SetSpeed(0, 0.7);
+    MOTOR_SetSpeed(1, 0.7*SPD);
   }
 }
 
@@ -286,10 +290,7 @@ void Sequence_Parcours()
       mouvementLigne(a.longueur);
   }
 
-
-  return;     // À ENLEVER
-
-
+   // return;//À commenter pour retour
   // Parcours à l'envers
   print("Parcours fini! À l'envers maintenant!\n");
   // (démarre à l'avant-dernier élément, donc taille totale - 2)
