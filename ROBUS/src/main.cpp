@@ -8,21 +8,21 @@
 
 /******************************************************************************/
 /* Constantes --------------------------------------------------------------- */
-#define ROBUS 'B'
+#define ROBUS 'A'
 
 #if(ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
 #define ENCODEUR_DROIT_360  (long)7667
 
-#define SPD                 1.076
-#define ANGULO              0.96
+#define SPD    1.076
+#define ANGULO 0.9545
 
 #elif(ROBUS == 'B')
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
 
-#define SPD                 0.967
-#define ANGULO              0.975
+#define SPD    0.967
+#define ANGULO 0.975
 #endif
 
 
@@ -56,7 +56,8 @@ typedef struct        // Une structure est plusieurs données mises dans un paqu
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-Vecteur tab[] = {{0, 123}, {-90, 88}, {90, 86}, {45, 182}, {-90, 61}, {45, 110}, {180, 0}};
+Vecteur tab[] = {{45, 0}};
+//{{0, 123}, {-90, 88}, {90, 86}, {45, 182}, {-90, 61}, {45, 110}, {180, 0}};
 
 
 /******************************************************************************/
@@ -140,15 +141,15 @@ void mouvementLigne(int distanceCM)
     }
 
     // Le timer est utilisé pour faire les calculs du PID uniquement à une certaine période fixe.
-    unsigned long timer = millis();
-    bool rdyToStopG = false;
-    bool rdyToStopD = false;
+    unsigned long timer      = millis();
+    bool          rdyToStopG = false;
+    bool          rdyToStopD = false;
 
     // La consigne est la distance à faire en nombre de coches d'encodeur
     // La commande est la distance qu'il reste à faire, avec rétroaction du PID
     int32_t consigne = CMtoCoche(CorrectionLongueur(distanceCM));
-    float cmdG = consigne;
-    float cmdD = consigne;
+    float   cmdG     = consigne;
+    float   cmdD     = consigne;
 
 
     print("Déplacement de %d cm (%ld)\n", distanceCM, consigne);
@@ -254,7 +255,7 @@ void Sequence_Parcours()
         mouvementLigne(a.longueur);
     }
 
-    // return;//À commenter pour retour
+    return;//À commenter pour retour
     // Parcours à l'envers
     print("Parcours fini! À l'envers maintenant!\n");
     // (démarre à l'avant-dernier élément, donc taille totale - 2)
@@ -278,10 +279,6 @@ void setup()
 
     ENCODER_ReadReset(0);
     ENCODER_ReadReset(1);
-
-    // Print de la valeur des encodeurs au temps 0
-    print("Encodeur 0: %ld\n", ENCODER_Read(0));
-    print("Encodeur 1: %ld\n", ENCODER_Read(1));
 
     delay(500);
 
