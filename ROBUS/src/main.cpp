@@ -8,14 +8,14 @@
 
 /******************************************************************************/
 /* Constantes --------------------------------------------------------------- */
-#define ROBUS 'B'
+#define ROBUS 'A'
 
 #if(ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
 #define ENCODEUR_DROIT_360  (long)7667
 
 #define SPD    1.076
-#define ANGULO 0.9545
+#define ANGULO 0.9232
 
 #elif(ROBUS == 'B')
 #define ENCODEUR_GAUCHE_360 (long)7700
@@ -55,7 +55,15 @@ typedef struct        // Une structure est plusieurs données mises dans un paqu
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-static Vecteur tab[] = {{0,122},{-45,0},{-45,90},{45,0},{45,73},{45,184},{-45,0},{-45,57},{45,109},{197,0}};
+static Vecteur tab[] = 
+{{0,122}, //  ||
+{-90,90}, //  ==
+{90,73},  //  ||
+{42,180}, //  //
+{-90,57}, //  \\ 
+{42,115}, //  ||
+{180,0}};
+//{{-360, 0}};
 
 
 /******************************************************************************/
@@ -249,11 +257,18 @@ void Sequence_Parcours()
         print("\nVecteur #%d\n", i);
 
         Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
+
+        for ( ; abs(a.angle) > 45 ; a.angle = (a.angle >= 0) ? a.angle - 45 : a.angle + 45)
+        { 
+          Virage((a.angle % 45 == 0) ? (a.angle >= 0) ? 45 : -45 : a.angle % 45);
+          delay(1000);
+        }
+
         Virage(a.angle);
         mouvementLigne(a.longueur);
     }
 
-    return;//À commenter pour retour
+   // return;//À commenter pour retour
     // Parcours à l'envers
     print("Parcours fini! À l'envers maintenant!\n");
     // (démarre à l'avant-dernier élément, donc taille totale - 2)
@@ -263,8 +278,16 @@ void Sequence_Parcours()
     {
         Vecteur a = tab[i];
         mouvementLigne(a.longueur);
-        Virage((-1) * a.angle);        // Tourne de l'angle * -1, pour faire l'angle
-                                       // inverse.
+
+        for ( ; abs(a.angle) > 45 ; a.angle = (a.angle >= 0) ? a.angle - 45 : a.angle + 45)
+        { 
+          Virage((-1) * a.angle % 45);        // Tourne de l'angle * -1, pour faire l'angle
+                                    // inverse.
+          delay(1000);
+        }
+
+      Virage((-1) * a.angle);        // Tourne de l'angle * -1, pour faire l'angle
+                                     // inverse.
     }
 }
 
