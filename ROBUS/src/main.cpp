@@ -18,7 +18,7 @@
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
 #define SPD 0.967
-#define ANGULO 0.975
+#define ANGULO 0.915 
 #endif
 
 
@@ -52,7 +52,7 @@ typedef struct    // Une structure est plusieurs données mises dans un paquet,
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-Vecteur tab[] = {{0,123},{-90,88},{90,86},{45,182},{-90,61},{45,110},{180,0}};
+static Vecteur tab[] = {{0,122},{-45,0},{-45,90},{45,0},{45,73},{45,184},{-45,0},{-45,57},{45,109},{197,0}};
 
 
 /******************************************************************************/
@@ -264,7 +264,7 @@ float CMtoCoche(int32_t valeurCM)
 
 int32_t CorrectionLongueur(int32_t longueurBase)
 {
-  return (longueurBase * 1.03);
+  return (longueurBase * 1);
 }
 
 
@@ -282,10 +282,10 @@ int32_t CorrectionLongueur(int32_t longueurBase)
 void Sequence_Parcours()
 {
   for (int i = 0; i < sizeof_array(tab); i++)
-  {
+  {    
       print("\nVecteur #%d\n", i);
 
-      Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
+      Vecteur a = tab[i]; // Fait une copie du vecteur actuel.
       Virage(a.angle);
       mouvementLigne(a.longueur);
   }
