@@ -8,7 +8,7 @@
 
 /******************************************************************************/
 /* Constantes --------------------------------------------------------------- */
-#define ROBUS 'A'
+#define ROBUS 'B'
 
 #if(ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
@@ -20,8 +20,10 @@
 #elif(ROBUS == 'B')
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
-#define SPD 0.967
-#define ANGULO 0.915 
+
+#define SPD    0.975      // Cette valeur multiplie l'encodeur de droite
+                          // Diminuer cette valeur pour aller plus à droite
+#define ANGULO 0.915
 #endif
 
 
@@ -29,6 +31,7 @@
 #define DIAMETRE_TOUR 18.5
 
 #define PERIODE 3
+#define DELAY_VIRAGE  1500
 
 #define KPD 0.0000169
 #define KID 0.0000269
@@ -37,6 +40,7 @@
 #define KPG 0.00001
 #define KIG 0.00003
 //#define KDG      12
+
 
 
 
@@ -55,15 +59,14 @@ typedef struct        // Une structure est plusieurs données mises dans un paqu
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-static Vecteur tab[] = 
-{{0,122}, //  ||
-{-90,90}, //  ==
-{90,73},  //  ||
-{42,180}, //  //
-{-90,57}, //  \\ 
-{42,115}, //  ||
-{180,0}};
-//{{-360, 0}};
+static Vecteur tab[] = {{0, 123},         //  ||  A
+                        {-90, 90},        //  ==  B
+                        {90, 93},         //  ||  C
+                        {45, 177},        //  //  D
+                        {-90, 61},        //  \\  E
+                        {45, 115},        //  ||  F
+                        {180, 0}}; 
+// {{180, 0}, {-180, 0}};
 
 
 /******************************************************************************/
@@ -126,6 +129,12 @@ void Virage_Gauche(int angle)
 
 void Virage(int angle)
 {
+    for(; abs(angle) > 45; angle = (angle >= 0) ? angle - 45 : angle + 45)
+    {
+        Virage((angle % 45 == 0) ? ((angle >= 0) ? 45 : -45) : angle % 45);
+        delay(DELAY_VIRAGE);
+    }
+
     print("Virage de %d°\n", angle);
     if(angle < 0)
     {
@@ -147,9 +156,9 @@ void mouvementLigne(int distanceCM)
     }
 
     // Le timer est utilisé pour faire les calculs du PID uniquement à une certaine période fixe.
-    unsigned long timer      = millis();
-    bool          rdyToStopG = false;
-    bool          rdyToStopD = false;
+    uint32_t timer      = millis();
+    bool     rdyToStopG = false;
+    bool     rdyToStopD = false;
 
     // La consigne est la distance à faire en nombre de coches d'encodeur
     // La commande est la distance qu'il reste à faire, avec rétroaction du PID
@@ -203,21 +212,25 @@ void mouvementLigne(int distanceCM)
 
 void avancer(int32_t encodeur, int32_t consigne)
 {
+    // Palier 5%
     if(encodeur < (consigne * 0.05) || encodeur > (consigne * 0.95))
     {
         MOTOR_SetSpeed(0, 0.3);
         MOTOR_SetSpeed(1, 0.3 * SPD);
     }
+    // Palier 20%
     else if(encodeur < (consigne * 0.2) || encodeur > (consigne * 0.8))
     {
         MOTOR_SetSpeed(0, 0.5);
         MOTOR_SetSpeed(1, 0.5 * SPD);
     }
+    // Palier 30%
     else if(encodeur < (consigne * 0.3) || encodeur > (consigne * 0.7))
     {
         MOTOR_SetSpeed(0, 0.6);
         MOTOR_SetSpeed(1, 0.6 * SPD);
     }
+    // Palier continu
     else
     {
         MOTOR_SetSpeed(0, 0.7);
@@ -258,37 +271,28 @@ void Sequence_Parcours()
 
         Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
 
-        for ( ; abs(a.angle) > 45 ; a.angle = (a.angle >= 0) ? a.angle - 45 : a.angle + 45)
-        { 
-          Virage((a.angle % 45 == 0) ? (a.angle >= 0) ? 45 : -45 : a.angle % 45);
-          delay(1000);
-        }
-
         Virage(a.angle);
         mouvementLigne(a.longueur);
     }
 
-   // return;//À commenter pour retour
+    // return;//À commenter pour retour
     // Parcours à l'envers
     print("Parcours fini! À l'envers maintenant!\n");
+    delay(DELAY_VIRAGE);
     // (démarre à l'avant-dernier élément, donc taille totale - 2)
     // (pour démarrer au dernier élément, il aurait fallu faire taille totale - 1,
     //  car les tableaux commencent à 0 en C).
     for(int i = sizeof_array(tab) - 2; i >= 0; i--)
     {
         Vecteur a = tab[i];
+
         mouvementLigne(a.longueur);
-
-        for ( ; abs(a.angle) > 45 ; a.angle = (a.angle >= 0) ? a.angle - 45 : a.angle + 45)
-        { 
-          Virage((-1) * a.angle % 45);        // Tourne de l'angle * -1, pour faire l'angle
-                                    // inverse.
-          delay(1000);
-        }
-
-      Virage((-1) * a.angle);        // Tourne de l'angle * -1, pour faire l'angle
-                                     // inverse.
+        Virage((-1) * a.angle);        // Tourne de l'angle * -1, pour faire l'angle
+                                       // inverse.
     }
+
+    // Retour sur lui-même
+    Virage(180);
 }
 
 
