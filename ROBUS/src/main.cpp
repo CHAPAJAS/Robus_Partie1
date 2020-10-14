@@ -16,6 +16,7 @@
 
 #define ANGULOD 0.913
 #define ANGULOG 0.9
+
 #define SPD    1.076
 
 #elif(ROBUS == 'B')
@@ -30,6 +31,7 @@
                            * Diminuer cette valeur pour aller plus à droite. */
 #endif
 
+#define LONGULO 1.013
 
 #define DIAMETRE_ROUE (3 * 2.54)
 #define DIAMETRE_TOUR 18.5
@@ -60,13 +62,13 @@ struct Vecteur        // Une structure est plusieurs données mises dans un paqu
 static Vecteur tab[] = 
                         {{0, 123, DELAY_VIRAGE},        //  ||  A
                         {-90, 90, DELAY_VIRAGE},        //  ==  B
-                        {90, 90, DELAY_VIRAGE},         //  ||  C
-                        {45, 182, DELAY_VIRAGE},        //  //  D
+                        {90, 93, DELAY_VIRAGE},         //  ||  C
+                        {41, 184, DELAY_VIRAGE},        //  //  D
                         {-90, 61, DELAY_VIRAGE},        //  \\  E
                         {45, 115, DELAY_VIRAGE},        //  ||  F
                         {180, 0, DELAY_VIRAGE}};
 //  {{-360, 0, DELAY_VIRAGE / 3}};
-// {{0, 250}};
+//  {{0, 250}};
 
 
 /******************************************************************************/
@@ -243,11 +245,10 @@ float CMtoCoche(int32_t valeurCM)
     return valeurCoche;
 }
 
-// Cette fonction ne fait plus rien
 // Avant, elle multipliait la distance par 1.03
 int32_t CorrectionLongueur(int32_t longueurBase)
 {
-    return (longueurBase * 1);
+    return (longueurBase / LONGULO);
 }
 
 
@@ -270,9 +271,9 @@ void Sequence_Parcours()
 
         Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
 
-        delay(a.delay);
+        delay(a.delay / 2);
         Virage(a.angle);
-        delay(a.delay);
+        delay(a.delay / 2);
         mouvementLigne(a.longueur);
     }
 
@@ -286,9 +287,9 @@ void Sequence_Parcours()
     {
         Vecteur a = tab[i];
 
-        delay(a.delay);
+        delay(a.delay / 2);
         mouvementLigne(a.longueur);
-        delay(a.delay);
+        delay(a.delay / 2);
         Virage((-1) * a.angle);        // Tourne de l'angle * -1, pour faire l'angle
                                        // inverse.
     }
