@@ -14,18 +14,19 @@
 #define ENCODEUR_GAUCHE_360 (long)8169
 #define ENCODEUR_DROIT_360  (long)7667
 
-#define ANGULO 0.9232
+#define ANGULOD 0.913
+#define ANGULOG 0.9
 #define SPD    1.076
 
 #elif(ROBUS == 'B')
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
 
-#define ANGULOD  0.92355  /* Cette valeur multiplie l'angle droite à parcourir.                                          \
+#define ANGULOD  0.92355  /* Cette valeur multiplie l'angle droite à parcourir.
                            * Diminuer cette valeur pour réduire l'angle parcouru. */
-#define ANGULOG  0.924    /* Cette valeur multiplie l'angle gauche à parcourir.                                          \
+#define ANGULOG  0.9211   /* Cette valeur multiplie l'angle gauche à parcourir.
                            * Diminuer cette valeur pour réduire l'angle parcouru. */
-#define SPD     0.975     /* Cette valeur multiplie le moteur de droite.                                           \
+#define SPD     0.975     /* Cette valeur multiplie le moteur de droite.
                            * Diminuer cette valeur pour aller plus à droite. */
 #endif
 
@@ -36,7 +37,7 @@
 #define PERIODE      3
 #define DELAY_VIRAGE 750
 
-#define FAIRE_RETOUR false
+#define FAIRE_RETOUR true
 
 
 
@@ -57,15 +58,15 @@ struct Vecteur        // Une structure est plusieurs données mises dans un paqu
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
 static Vecteur tab[] = 
-                        // {{0, 123},                           //  ||  A
-                        // {-90, 90},                          //  ==  B
-                        // {90, 93},                           //  ||  C
-                        // {45, 177, DELAY_VIRAGE / 3},        //  //  D
-                        // {-90, 61, DELAY_VIRAGE / 3},        //  \\  E
-                        // {45, 115, DELAY_VIRAGE / 3},        //  ||  F
-                        // {180, 0, DELAY_VIRAGE}};
- {{360, 0, DELAY_VIRAGE / 3}};
-// {{0, 250}};l
+                        {{0, 123, DELAY_VIRAGE},        //  ||  A
+                        {-90, 90, DELAY_VIRAGE},        //  ==  B
+                        {90, 90, DELAY_VIRAGE},         //  ||  C
+                        {45, 182, DELAY_VIRAGE},        //  //  D
+                        {-90, 61, DELAY_VIRAGE},        //  \\  E
+                        {45, 115, DELAY_VIRAGE},        //  ||  F
+                        {180, 0, DELAY_VIRAGE}};
+//  {{-360, 0, DELAY_VIRAGE / 3}};
+// {{0, 250}};
 
 
 /******************************************************************************/
@@ -272,7 +273,7 @@ void Sequence_Parcours()
         delay(a.delay);
         Virage(a.angle);
         delay(a.delay);
-        // mouvementLigne(a.longueur);
+        mouvementLigne(a.longueur);
     }
 
 
