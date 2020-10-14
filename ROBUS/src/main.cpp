@@ -14,33 +14,25 @@
 #define ENCODEUR_GAUCHE_360 (long)8169
 #define ENCODEUR_DROIT_360  (long)7667
 
-#define SPD    1.076
 #define ANGULO 0.9232
+#define SPD    1.076
 
 #elif(ROBUS == 'B')
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
 
-#define SPD    0.975      // Cette valeur multiplie l'encodeur de droite
-                          // Diminuer cette valeur pour aller plus à droite
-#define ANGULO 0.915
+#define ANGULO 0.925        /* Cette valeur multiplie l'angle à parcourir. 
+                             * Diminuer cette valeur pour réduire l'angle parcouru */
+#define SPD    0.975        /* Cette valeur multiplie le moteur de droite.
+                             * Diminuer cette valeur pour aller plus à droite */
 #endif
 
 
 #define DIAMETRE_ROUE (3 * 2.54)
 #define DIAMETRE_TOUR 18.5
 
-#define PERIODE 3
-#define DELAY_VIRAGE  1500
-
-#define KPD 0.0000169
-#define KID 0.0000269
-//#define KDD      12
-
-#define KPG 0.00001
-#define KIG 0.00003
-//#define KDG      12
-
+#define PERIODE      3
+#define DELAY_VIRAGE 1250
 
 
 
@@ -65,13 +57,13 @@ static Vecteur tab[] = {{0, 123},         //  ||  A
                         {45, 177},        //  //  D
                         {-90, 61},        //  \\  E
                         {45, 115},        //  ||  F
-                        {180, 0}}; 
-// {{180, 0}, {-180, 0}};
+                        {180, 0}};
+// {{180, 0}};
+// {{0, 250}};
 
 
 /******************************************************************************/
 /* Déclarations de fonctions ------------------------------------------------ */
-// void avancerTest(int longueurCM);
 void Sequence_Parcours();
 
 void Virage_Gauche(int angle);
@@ -269,16 +261,22 @@ void Sequence_Parcours()
     {
         print("\nVecteur #%d\n", i);
 
+        // Rajoute un délai avant le dernier vecteur
+        if(i == sizeof_array(tab) - 1)
+        {
+            delay(DELAY_VIRAGE);
+        }
+
         Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
 
         Virage(a.angle);
         mouvementLigne(a.longueur);
     }
 
-    // return;//À commenter pour retour
+
     // Parcours à l'envers
-    print("Parcours fini! À l'envers maintenant!\n");
-    delay(DELAY_VIRAGE);
+    // return;  //À commenter pour retour
+
     // (démarre à l'avant-dernier élément, donc taille totale - 2)
     // (pour démarrer au dernier élément, il aurait fallu faire taille totale - 1,
     //  car les tableaux commencent à 0 en C).
@@ -292,6 +290,7 @@ void Sequence_Parcours()
     }
 
     // Retour sur lui-même
+    delay(DELAY_VIRAGE);
     Virage(180);
 }
 
