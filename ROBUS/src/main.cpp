@@ -21,10 +21,12 @@
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
 
-#define ANGULO 0.925        /* Cette valeur multiplie l'angle à parcourir. 
-                             * Diminuer cette valeur pour réduire l'angle parcouru */
-#define SPD    0.975        /* Cette valeur multiplie le moteur de droite.
-                             * Diminuer cette valeur pour aller plus à droite */
+#define ANGULO                                                                                     \
+    0.925 /* Cette valeur multiplie l'angle à parcourir.                                          \
+           * Diminuer cette valeur pour réduire l'angle parcouru */
+#define SPD                                                                                        \
+    0.975 /* Cette valeur multiplie le moteur de droite.                                           \
+           * Diminuer cette valeur pour aller plus à droite */
 #endif
 
 
@@ -38,26 +40,27 @@
 
 /******************************************************************************/
 /* Structures --------------------------------------------------------------- */
-typedef struct        // Une structure est plusieurs données mises dans un paquet,
+struct Vecteur        // Une structure est plusieurs données mises dans un paquet,
                       // qui contient toutes ces données.
                       // Un peu comme une classe sans fonctions.
 {
     int angle;
     int longueur;
-} Vecteur;
+    int delay;
+};
 
 
 /******************************************************************************/
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-static Vecteur tab[] = {{0, 123},         //  ||  A
-                        {-90, 90},        //  ==  B
-                        {90, 93},         //  ||  C
-                        {45, 177},        //  //  D
-                        {-90, 61},        //  \\  E
-                        {45, 115},        //  ||  F
-                        {180, 0}};
+static Vecteur tab[] = {{0, 123},                           //  ||  A
+                        {-90, 90},                          //  ==  B
+                        {90, 93},                           //  ||  C
+                        {45, 177, DELAY_VIRAGE / 3},        //  //  D
+                        {-90, 61, DELAY_VIRAGE / 3},        //  \\  E
+                        {45, 115, DELAY_VIRAGE / 3},        //  ||  F
+                        {180, 0, DELAY_VIRAGE}};
 // {{180, 0}};
 // {{0, 250}};
 
@@ -261,15 +264,11 @@ void Sequence_Parcours()
     {
         print("\nVecteur #%d\n", i);
 
-        // Rajoute un délai avant le dernier vecteur
-        if(i == sizeof_array(tab) - 1)
-        {
-            delay(DELAY_VIRAGE);
-        }
-
         Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
 
+        delay(a.delay);
         Virage(a.angle);
+        delay(a.delay);
         mouvementLigne(a.longueur);
     }
 
@@ -284,7 +283,9 @@ void Sequence_Parcours()
     {
         Vecteur a = tab[i];
 
+        delay(a.delay);
         mouvementLigne(a.longueur);
+        delay(a.delay);
         Virage((-1) * a.angle);        // Tourne de l'angle * -1, pour faire l'angle
                                        // inverse.
     }
