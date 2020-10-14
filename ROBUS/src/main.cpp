@@ -37,7 +37,7 @@
 #define DIAMETRE_TOUR 18.5
 
 #define PERIODE      3
-#define DELAY_VIRAGE 750
+#define DELAY_VIRAGE 1000
 
 #define FAIRE_RETOUR true
 
