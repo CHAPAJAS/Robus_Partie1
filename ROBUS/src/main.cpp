@@ -21,12 +21,12 @@
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
 
-#define ANGULO                                                                                     \
-    0.925 /* Cette valeur multiplie l'angle à parcourir.                                          \
-           * Diminuer cette valeur pour réduire l'angle parcouru */
-#define SPD                                                                                        \
-    0.975 /* Cette valeur multiplie le moteur de droite.                                           \
-           * Diminuer cette valeur pour aller plus à droite */
+#define ANGULOD  0.92355  /* Cette valeur multiplie l'angle droite à parcourir.                                          \
+                           * Diminuer cette valeur pour réduire l'angle parcouru. */
+#define ANGULOG  0.924    /* Cette valeur multiplie l'angle gauche à parcourir.                                          \
+                           * Diminuer cette valeur pour réduire l'angle parcouru. */
+#define SPD     0.975     /* Cette valeur multiplie le moteur de droite.                                           \
+                           * Diminuer cette valeur pour aller plus à droite. */
 #endif
 
 
@@ -34,7 +34,9 @@
 #define DIAMETRE_TOUR 18.5
 
 #define PERIODE      3
-#define DELAY_VIRAGE 1250
+#define DELAY_VIRAGE 750
+
+#define FAIRE_RETOUR false
 
 
 
@@ -54,15 +56,16 @@ struct Vecteur        // Une structure est plusieurs données mises dans un paqu
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
-static Vecteur tab[] = {{0, 123},                           //  ||  A
-                        {-90, 90},                          //  ==  B
-                        {90, 93},                           //  ||  C
-                        {45, 177, DELAY_VIRAGE / 3},        //  //  D
-                        {-90, 61, DELAY_VIRAGE / 3},        //  \\  E
-                        {45, 115, DELAY_VIRAGE / 3},        //  ||  F
-                        {180, 0, DELAY_VIRAGE}};
-// {{180, 0}};
-// {{0, 250}};
+static Vecteur tab[] = 
+                        // {{0, 123},                           //  ||  A
+                        // {-90, 90},                          //  ==  B
+                        // {90, 93},                           //  ||  C
+                        // {45, 177, DELAY_VIRAGE / 3},        //  //  D
+                        // {-90, 61, DELAY_VIRAGE / 3},        //  \\  E
+                        // {45, 115, DELAY_VIRAGE / 3},        //  ||  F
+                        // {180, 0, DELAY_VIRAGE}};
+ {{360, 0, DELAY_VIRAGE / 3}};
+// {{0, 250}};l
 
 
 /******************************************************************************/
@@ -92,7 +95,7 @@ void Virage_Droit(int angle)
 
     long valeurEncodeurGauche = ENCODER_Read(0);
 
-    while(valeurEncodeurGauche <= ENCODEUR_GAUCHE_360 / (360 / (angle * ANGULO)))
+    while(valeurEncodeurGauche <= ENCODEUR_GAUCHE_360 / (360 / (angle * ANGULOD)))
     {
         MOTOR_SetSpeed(0, 0.3);
         MOTOR_SetSpeed(1, -0.3);
@@ -111,7 +114,7 @@ void Virage_Gauche(int angle)
 
     long valeurEncodeurDroit = ENCODER_Read(1);
 
-    while(valeurEncodeurDroit <= ENCODEUR_DROIT_360 / (360 / (angle * ANGULO)))
+    while(valeurEncodeurDroit <= ENCODEUR_DROIT_360 / (360 / (angle * ANGULOG)))
     {
         MOTOR_SetSpeed(0, -0.3);
         MOTOR_SetSpeed(1, 0.3);
@@ -269,13 +272,12 @@ void Sequence_Parcours()
         delay(a.delay);
         Virage(a.angle);
         delay(a.delay);
-        mouvementLigne(a.longueur);
+        // mouvementLigne(a.longueur);
     }
 
 
     // Parcours à l'envers
-    // return;  //À commenter pour retour
-
+#if FAIRE_RETOUR == true
     // (démarre à l'avant-dernier élément, donc taille totale - 2)
     // (pour démarrer au dernier élément, il aurait fallu faire taille totale - 1,
     //  car les tableaux commencent à 0 en C).
@@ -293,6 +295,8 @@ void Sequence_Parcours()
     // Retour sur lui-même
     delay(DELAY_VIRAGE);
     Virage(180);
+
+#endif
 }
 
 
