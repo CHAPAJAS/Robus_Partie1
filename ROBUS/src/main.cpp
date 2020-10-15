@@ -17,9 +17,9 @@
 #define ANGULOD 0.913
 #define ANGULOG 0.9
 
-#define SPD  1.076 //1.089
+#define SPD  1.065 //1.089
 
-#define LONGULO 1.03
+#define LONGULO 1.05
 
 #elif(ROBUS == 'B')
 #define ENCODEUR_GAUCHE_360 (long)7700
@@ -30,10 +30,10 @@
 #define ANGULOG             0.9211         // Cette valeur multiplie l'angle gauche à parcourir.
 
 // Diminuer cette valeur pour aller plus à droite.
-#define SPD                 0.975          // Cette valeur multiplie le moteur de droite.
+#define SPD                 0.972       // Cette valeur multiplie le moteur de droite.
 
 // Augmenter cette valeur pour aller plus loin.
-#define LONGULO 1.013                      // Cette valeur multiplie la distance à parcourir.
+#define LONGULO 1.03                     // Cette valeur multiplie la distance à parcourir.
 #else
     #error(Constante `ROBUS` doit être définie à `'A'` ou `'B'`)
 #endif
@@ -70,14 +70,15 @@ struct Vecteur        // Une structure est plusieurs données mises dans un paqu
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
 static Vecteur tab[] = 
-                        {{0, 123, DELAY_VIRAGE},         //  ||  A
-                        {-90, 90, DELAY_VIRAGE},        //  ==  B
-                        {90, 93, DELAY_VIRAGE},         //  ||  C
-                        {41, 184, DELAY_VIRAGE},        //  //  D
-                        {-90, 61, DELAY_VIRAGE},        //  \\  E
-                        {45, 115, DELAY_VIRAGE},        //  ||  F
-                        {180, 0, DELAY_VIRAGE}};
-//  {{-360, 0, DELAY_VIRAGE / 3}};
+                       {{0, 227, DELAY_VIRAGE},         //  ||  A
+                        {-90, 100, DELAY_VIRAGE},        //  ==  B
+                        {90, 45, DELAY_VIRAGE},         //  ||  C
+                        {90, 55, DELAY_VIRAGE},        //  //  D
+                        {-90, 104, DELAY_VIRAGE},        //  \\  E
+                        {90, 44, DELAY_VIRAGE},
+                        {-90, 125, DELAY_VIRAGE},       //  ||  F
+                        {180, 0, DELAY_VIRAGE}}; 
+ // {{90, 0, DELAY_VIRAGE / 3}};
 //  {{0, 250}};
 
 
