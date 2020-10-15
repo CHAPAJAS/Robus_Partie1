@@ -8,7 +8,7 @@
 
 /******************************************************************************/
 /* Constantes --------------------------------------------------------------- */
-#define ROBUS 'B'
+#define ROBUS 'A'
 
 #if(ROBUS == 'A')
 #define ENCODEUR_GAUCHE_360 (long)8169
@@ -17,21 +17,27 @@
 #define ANGULOD 0.913
 #define ANGULOG 0.9
 
-#define SPD    1.076
+#define SPD  1.076 //1.089
+
+#define LONGULO 1.03
 
 #elif(ROBUS == 'B')
 #define ENCODEUR_GAUCHE_360 (long)7700
 #define ENCODEUR_DROIT_360  (long)7840
 
-#define ANGULOD  0.92355  /* Cette valeur multiplie l'angle droite à parcourir.
-                           * Diminuer cette valeur pour réduire l'angle parcouru. */
-#define ANGULOG  0.9211   /* Cette valeur multiplie l'angle gauche à parcourir.
-                           * Diminuer cette valeur pour réduire l'angle parcouru. */
-#define SPD     0.975     /* Cette valeur multiplie le moteur de droite.
-                           * Diminuer cette valeur pour aller plus à droite. */
+// Diminuer ces valeurs pour réduire l'angle parcouru
+#define ANGULOD             0.92355        // Cette valeur multiplie l'angle droite à parcourir.
+#define ANGULOG             0.9211         // Cette valeur multiplie l'angle gauche à parcourir.
+
+// Diminuer cette valeur pour aller plus à droite.
+#define SPD                 0.975          // Cette valeur multiplie le moteur de droite.
+
+// Augmenter cette valeur pour aller plus loin.
+#define LONGULO 1.013                      // Cette valeur multiplie la distance à parcourir.
+#else
+    #error(Constante `ROBUS` doit être définie à `'A'` ou `'B'`)
 #endif
 
-#define LONGULO 1.013
 
 #define DIAMETRE_ROUE (3 * 2.54)
 #define DIAMETRE_TOUR 18.5
@@ -40,6 +46,10 @@
 #define DELAY_VIRAGE 1000
 
 #define FAIRE_RETOUR true
+
+#define DEPLACEMENTS true
+#define VIRAGES      true
+#define HALF_TURN    false
 
 
 
@@ -60,7 +70,7 @@ struct Vecteur        // Une structure est plusieurs données mises dans un paqu
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
 static Vecteur tab[] = 
-                        {{0, 123, DELAY_VIRAGE},        //  ||  A
+                        {{0, 123, DELAY_VIRAGE},         //  ||  A
                         {-90, 90, DELAY_VIRAGE},        //  ==  B
                         {90, 93, DELAY_VIRAGE},         //  ||  C
                         {41, 184, DELAY_VIRAGE},        //  //  D
@@ -130,6 +140,10 @@ void Virage_Gauche(int angle)
 
 void Virage(int angle)
 {
+#if VIRAGES == false
+    return;
+#endif
+
     for(; abs(angle) > 45; angle = (angle >= 0) ? angle - 45 : angle + 45)
     {
         Virage((angle % 45 == 0) ? ((angle >= 0) ? 45 : -45) : angle % 45);
@@ -151,6 +165,10 @@ void Virage(int angle)
 
 void mouvementLigne(int distanceCM)
 {
+#if DEPLACEMENTS == false
+    return;
+#endif
+
     if(distanceCM == 0)
     {
         return;
@@ -294,9 +312,12 @@ void Sequence_Parcours()
                                        // inverse.
     }
 
+
     // Retour sur lui-même
+#if HALF_TURN == true
     delay(DELAY_VIRAGE);
     Virage(180);
+#endif
 
 #endif
 }
