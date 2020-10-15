@@ -14,11 +14,11 @@
 #define ENCODEUR_GAUCHE_360 (long)8169
 #define ENCODEUR_DROIT_360  (long)7667
 
-#define ANGULOD 0.913
-#define ANGULOG 0.9
+#define ANGULOD 0.98
+#define ANGULOG 0.955
 
-#define SPD  1.065 //1.089
-
+#define SPD  1.0625 //1.089
+#define SPECIAL_SPD   1.075
 #define LONGULO 1.05
 
 #elif(ROBUS == 'B')
@@ -26,11 +26,12 @@
 #define ENCODEUR_DROIT_360  (long)7840
 
 // Diminuer ces valeurs pour réduire l'angle parcouru
-#define ANGULOD             0.92355        // Cette valeur multiplie l'angle droite à parcourir.
-#define ANGULOG             0.9211         // Cette valeur multiplie l'angle gauche à parcourir.
+#define ANGULOD             0.961        // Cette valeur multiplie l'angle droite à parcourir.
+#define ANGULOG             0.955        // Cette valeur multiplie l'angle gauche à parcourir.
 
 // Diminuer cette valeur pour aller plus à droite.
 #define SPD                 0.972       // Cette valeur multiplie le moteur de droite.
+#define SPECIAL_SPD         0.993
 
 // Augmenter cette valeur pour aller plus loin.
 #define LONGULO 1.03                     // Cette valeur multiplie la distance à parcourir.
@@ -52,6 +53,9 @@
 #define HALF_TURN    false
 
 
+int i_parcours = 0;
+
+
 
 /******************************************************************************/
 /* Structures --------------------------------------------------------------- */
@@ -69,17 +73,30 @@ struct Vecteur        // Une structure est plusieurs données mises dans un paqu
 /* Parcours ----------------------------------------------------------------- */
 // Ici, les vecteur sont de la forme (angle, longueur).
 // On crée des nouveaux vecteurs, mais dans un tableau.
+#if ROBUS == 'A'
 static Vecteur tab[] = 
-                       {{0, 227, DELAY_VIRAGE},         //  ||  A
-                        {-90, 100, DELAY_VIRAGE},        //  ==  B
-                        {90, 45, DELAY_VIRAGE},         //  ||  C
-                        {90, 55, DELAY_VIRAGE},        //  //  D
-                        {-90, 104, DELAY_VIRAGE},        //  \\  E
-                        {90, 44, DELAY_VIRAGE},
-                        {-90, 125, DELAY_VIRAGE},       //  ||  F
-                        {180, 0, DELAY_VIRAGE}}; 
- // {{90, 0, DELAY_VIRAGE / 3}};
-//  {{0, 250}};
+                        {{0, 227, DELAY_VIRAGE},        // A
+                         {-88, 100, DELAY_VIRAGE},      // B
+                         {85, 45, DELAY_VIRAGE},        // C
+                         {88, 50, DELAY_VIRAGE},        // D
+                         {-88, 104, DELAY_VIRAGE},      // E
+                         {88, 44, DELAY_VIRAGE},        // F
+                         {-88, 125, DELAY_VIRAGE},      // G
+                         {176, 0, DELAY_VIRAGE}};       // H
+
+#elif ROBUS == 'B'
+static Vecteur tab[] = 
+                        {{0, 227, DELAY_VIRAGE},        // A
+                         {-90, 100, DELAY_VIRAGE},      // B
+                         {88, 47, DELAY_VIRAGE},        // C
+                         {88, 55, DELAY_VIRAGE},        // D
+                         {-92, 104, DELAY_VIRAGE},      // E
+                         {90, 44, DELAY_VIRAGE},        // F
+                         {-90, 125, DELAY_VIRAGE},      // G
+                         {180, 0, DELAY_VIRAGE}};       // H
+#endif
+//{{-91, 0, DELAY_VIRAGE / 3}};
+//   {{0, 250}};
 
 
 /******************************************************************************/
@@ -145,12 +162,12 @@ void Virage(int angle)
     return;
 #endif
 
-    for(; abs(angle) > 45; angle = (angle >= 0) ? angle - 45 : angle + 45)
-    {
-        Virage((angle % 45 == 0) ? ((angle >= 0) ? 45 : -45) : angle % 45);
+     for(; abs(angle) > 100; angle = (angle >= 0) ? angle - 90 : angle + 90)
+     {
+      Virage((angle % 90 == 0) ? ((angle >= 0) ? 90 : -90) : angle % 90);
         delay(DELAY_VIRAGE);
     }
-
+  
     print("Virage de %d°\n", angle);
     if(angle < 0)
     {
@@ -232,29 +249,31 @@ void mouvementLigne(int distanceCM)
 
 void avancer(int32_t encodeur, int32_t consigne)
 {
+    float spd = (i_parcours == 0) ? SPECIAL_SPD : SPD;
+
     // Palier 5%
     if(encodeur < (consigne * 0.05) || encodeur > (consigne * 0.95))
     {
         MOTOR_SetSpeed(0, 0.3);
-        MOTOR_SetSpeed(1, 0.3 * SPD);
+        MOTOR_SetSpeed(1, 0.3 * spd);
     }
     // Palier 20%
     else if(encodeur < (consigne * 0.2) || encodeur > (consigne * 0.8))
     {
         MOTOR_SetSpeed(0, 0.5);
-        MOTOR_SetSpeed(1, 0.5 * SPD);
+        MOTOR_SetSpeed(1, 0.5 * spd);
     }
     // Palier 30%
     else if(encodeur < (consigne * 0.3) || encodeur > (consigne * 0.7))
     {
         MOTOR_SetSpeed(0, 0.6);
-        MOTOR_SetSpeed(1, 0.6 * SPD);
+        MOTOR_SetSpeed(1, 0.6 * spd);
     }
     // Palier continu
     else
     {
         MOTOR_SetSpeed(0, 0.7);
-        MOTOR_SetSpeed(1, 0.7 * SPD);
+        MOTOR_SetSpeed(1, 0.7 * spd);
     }
 }
 
@@ -284,11 +303,11 @@ int32_t CorrectionLongueur(int32_t longueurBase)
  */
 void Sequence_Parcours()
 {
-    for(int i = 0; i < sizeof_array(tab); i++)
+    for(i_parcours = 0; i_parcours < sizeof_array(tab); i_parcours++)
     {
-        print("\nVecteur #%d\n", i);
+        print("\nVecteur #%d\n", i_parcours);
 
-        Vecteur a = tab[i];        // Fait une copie du vecteur actuel.
+        Vecteur a = tab[i_parcours];        // Fait une copie du vecteur actuel.
 
         delay(a.delay / 2);
         Virage(a.angle);
